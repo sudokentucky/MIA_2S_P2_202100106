@@ -82,6 +82,18 @@ var mapCommands = map[string]func([]string) (string, error){ // Cambiamos a (str
 		result, err := commands.ParserCat(args)
 		return fmt.Sprintf("%v", result), err
 	},
+	"rename": func(args []string) (string, error) {
+		result, err := commands.ParserRename(args)
+		return fmt.Sprintf("%v", result), err
+	},
+	"edit": func(args []string) (string, error) {
+		result, err := commands.ParserEdit(args)
+		return fmt.Sprintf("%v", result), err
+	},
+	"find": func(args []string) (string, error) {
+		result, err := commands.ParserFind(args)
+		return fmt.Sprintf("%v", result), err
+	},
 	"help": help,
 }
 
