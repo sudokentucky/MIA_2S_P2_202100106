@@ -139,63 +139,61 @@ func (sb *Superblock) PrintBlocks(path string) error {
 	return nil
 }
 
-// FindNextFreeBlock busca el siguiente bloque libre y lo marca como ocupado
 func (sb *Superblock) FindNextFreeBlock(file *os.File) (int32, error) {
-	totalBlocks := sb.S_blocks_count + sb.S_free_blocks_count // Número total de bloques
+	totalBlocks := sb.S_free_blocks_count // Usar S_blocks_count para iterar sobre el rango completo de bloques
+	fmt.Printf("Total de bloques disponibles: %d\n", totalBlocks)
+	fmt.Printf("Bloques libres reportados por el superbloque: %d\n", sb.S_free_blocks_count)
 
+	// Iterar sobre todos los bloques
 	for position := int32(0); position < totalBlocks; position++ {
+		fmt.Printf("Verificando si el bloque en la posición %d está libre...\n", position)
 		isFree, err := sb.isBlockFree(file, sb.S_bm_block_start, position)
 		if err != nil {
-			return -1, fmt.Errorf("error buscando bloque libre: %w", err)
+			return -1, fmt.Errorf("error buscando bloque libre en la posición %d: %w", position, err)
 		}
 
+		// Si encontramos un bloque libre, lo marcamos como ocupado
 		if isFree {
-			// Marcar el bloque como ocupado
+			fmt.Printf("Bloque libre encontrado en la posición %d. Procediendo a marcarlo como ocupado.\n", position)
 			err = sb.UpdateBitmapBlock(file, position, true)
 			if err != nil {
-				return -1, fmt.Errorf("error actualizando el bitmap del bloque: %w", err)
+				return -1, fmt.Errorf("error actualizando el bitmap del bloque en la posición %d: %w", position, err)
 			}
-
 			// Devolver el índice del bloque libre encontrado
-			fmt.Println("Indice encontrado:", position)
+			fmt.Printf("Índice del bloque libre asignado: %d\n", position)
 			return position, nil
+		} else {
+			fmt.Printf("El bloque en la posición %d ya está ocupado.\n", position)
 		}
 	}
 
-	// Si no hay bloques disponibles
+	// Si no se encontraron bloques libres
+	fmt.Println("No se encontraron bloques libres disponibles.")
 	return -1, fmt.Errorf("no hay bloques disponibles")
 }
 
-// AssignNewBlock asigna un nuevo bloque al inodo en el índice especificado si es necesario
 func (sb *Superblock) AssignNewBlock(file *os.File, inode *Inode, index int) (int32, error) {
-	fmt.Println("=== Iniciando la asignación de un nuevo bloque ===")
-
-	// Validar que el índice esté dentro del rango de bloques válidos
-	if index < 0 || index >= len(inode.I_block) {
-		return -1, fmt.Errorf("índice de bloque fuera de rango: %d", index)
-	}
+	fmt.Printf("=== Iniciando la asignación de un nuevo bloque en el índice %d del inodo ===\n", index)
 
 	// Verificar si ya hay un bloque asignado en ese índice
 	if inode.I_block[index] != -1 {
+		fmt.Printf("Error: el bloque en el índice %d ya está asignado: %d\n", index, inode.I_block[index])
 		return -1, fmt.Errorf("bloque en el índice %d ya está asignado: %d", index, inode.I_block[index])
 	}
 
-	// Intentar encontrar un bloque libre
+	fmt.Println("Buscando un bloque libre...")
 	newBlock, err := sb.FindNextFreeBlock(file)
 	if err != nil {
+		fmt.Printf("Error: no se encontró un bloque libre: %v\n", err)
 		return -1, fmt.Errorf("error buscando nuevo bloque libre: %w", err)
 	}
 
-	// Verificar si se encontró un bloque libre
-	if newBlock == -1 {
-		return -1, fmt.Errorf("no hay bloques libres disponibles")
-	}
-
-	// Asignar el nuevo bloque en el índice especificado
+	// Asignar el nuevo bloque en el índice especificado del inodo
 	inode.I_block[index] = newBlock
-	fmt.Printf("Nuevo bloque asignado: %d en I_block[%d]\n", newBlock, index)
+	fmt.Printf("Nuevo bloque asignado correctamente: %d en I_block[%d]\n", newBlock, index)
 
 	// Actualizar el Superblock después de asignar el bloque
+	fmt.Println("Actualizando el superbloque después de la asignación del nuevo bloque...")
 	sb.UpdateSuperblockAfterBlockAllocation()
 
 	// Retornar el nuevo bloque asignado
@@ -204,7 +202,7 @@ func (sb *Superblock) AssignNewBlock(file *os.File, inode *Inode, index int) (in
 
 // FindNextFreeInode busca el siguiente inodo libre y lo marca como ocupado
 func (sb *Superblock) FindNextFreeInode(file *os.File) (int32, error) {
-	totalInodes := sb.S_inodes_count + sb.S_free_inodes_count // Número total de inodos
+	totalInodes := sb.S_free_inodes_count // Número total de inodos
 
 	for position := int32(0); position < totalInodes; position++ {
 		isFree, err := sb.isInodeFree(file, sb.S_bm_inode_start, position)
