@@ -130,25 +130,22 @@ func commandMkfile(mkfile *MKFILE, outputBuffer *bytes.Buffer) error {
 	fmt.Fprintf(outputBuffer, "Creando archivo: %s\n", mkfile.path)
 
 	// Obtener los directorios y el nombre del archivo
-	dirPath, _ := GetDirectoryAndFile(mkfile.path)
+	parentDirs, _ := utils.GetParentDirectories(mkfile.path)
 
 	// Verificar si el directorio existe, y si -r está habilitado, crearlo recursivamente
 	if mkfile.r {
 		// Crear carpetas intermedias si es necesario
-		fmt.Fprintf(outputBuffer, "Creando directorios intermedios si es necesario: %s\n", dirPath)
-		err = partitionSuperblock.CreateFolderRecursively(file, dirPath)
+		fmt.Fprintf(outputBuffer, "Creando directorios intermedios si es necesario: %s\n", strings.Join(parentDirs, "/"))
+		err = partitionSuperblock.CreateFolderRecursively(file, strings.Join(parentDirs, "/"))
 		if err != nil {
 			return fmt.Errorf("error al crear directorios intermedios: %w", err)
 		}
 	} else {
-		// Verificar si el directorio padre existe si no se usa `-r`
-		exists, _, err := directoryExists(partitionSuperblock, file, 0, dirPath)
+		// Usar `findFolderInode` para verificar si el directorio padre existe
+		fmt.Fprintf(outputBuffer, "Verificando si el directorio '%s' existe...\n", strings.Join(parentDirs, "/"))
+		_, err := findFolderInode(file, partitionSuperblock, parentDirs)
 		if err != nil {
-			return fmt.Errorf("error al verificar directorio: %w", err)
-		}
-
-		if !exists {
-			return fmt.Errorf("el directorio '%s' no existe y no se ha especificado la opción -r", dirPath)
+			return fmt.Errorf("el directorio '%s' no existe y no se ha especificado la opción -r: %w", strings.Join(parentDirs, "/"), err)
 		}
 	}
 
