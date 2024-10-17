@@ -3,8 +3,10 @@ package main
 import (
 	analyzer "backend/Analyzer" // Importa el paquete "analyzer" desde el directorio "backend/analyzer"
 	env "backend/Env"
+	structs "backend/Structs"
 	commands "backend/commands/Users"
 	"backend/globals"
+	"encoding/binary"
 	"fmt"
 	"log" // Importa el paquete "log" para registrar mensajes de error
 	"os"
@@ -112,6 +114,87 @@ func main() {
 		})
 	})
 
+	// Definir la ruta GET para retornar la lista de usuarios y grupos
+	app.Get("/list-users-groups", func(c *fiber.Ctx) error {
+		// Verificar si hay una sesión activa
+		if !globals.IsLoggedIn() {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"status":  "error",
+				"message": "No hay ninguna sesión activa",
+			})
+		}
+
+		// Verificar que la partición esté montada
+		_, path, err := globals.GetMountedPartition(globals.UsuarioActual.Id)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"status":  "error",
+				"message": fmt.Sprintf("No se puede encontrar la partición montada: %v", err),
+			})
+		}
+
+		// Abrir el archivo de la partición
+		file, err := os.OpenFile(path, os.O_RDWR, 0755)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"status":  "error",
+				"message": fmt.Sprintf("No se puede abrir el archivo de la partición: %v", err),
+			})
+		}
+		defer file.Close()
+
+		// Cargar el Superblock y la partición
+		_, sb, _, err := globals.GetMountedPartitionRep(globals.UsuarioActual.Id)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"status":  "error",
+				"message": fmt.Sprintf("No se pudo cargar el Superblock: %v", err),
+			})
+		}
+
+		// Leer el inodo de users.txt (asumimos que es el segundo inodo)
+		var inode structs.Inode
+		inodeOffset := int64(sb.S_inode_start + int32(binary.Size(inode))) // Calcular el offset del inodo de users.txt
+		err = inode.Decode(file, inodeOffset)                              // Decodificar el inodo
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"status":  "error",
+				"message": fmt.Sprintf("Error leyendo el inodo de users.txt: %v", err),
+			})
+		}
+
+		// Obtener la lista de usuarios y grupos desde users.txt
+		data, err := globals.ListUsersAndGroups(file, sb, &inode) // Pasar el puntero de inode
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"status":  "error",
+				"message": fmt.Sprintf("Error listando usuarios y grupos: %v", err),
+			})
+		}
+
+		// Devolver la lista de usuarios y grupos en formato JSON
+		return c.JSON(data)
+	})
+
+	// Definir la ruta GET para verificar si hay un usuario logueado
+	app.Get("/users/logged-in", func(c *fiber.Ctx) error {
+		// Verificar si hay una sesión activa
+		if globals.UsuarioActual == nil || !globals.UsuarioActual.Status {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"status":  "error",
+				"message": "No hay ningún usuario logueado.",
+			})
+		}
+
+		// Si hay un usuario logueado, devolver su información
+		return c.JSON(fiber.Map{
+			"status":  "success",
+			"message": "Usuario logueado.",
+			"user":    globals.UsuarioActual.Name,
+			"id":      globals.UsuarioActual.Id,
+		})
+	})
+
 	//Verificar si al menos una partición está montada
 	app.Get("/check-partition", func(c *fiber.Ctx) error {
 		// Verificar si hay al menos una partición montada
@@ -129,13 +212,12 @@ func main() {
 		})
 	})
 
-	// Definir la ruta POST para leer el archivo de disco y mostrar particiones
 	app.Post("/disk/read", func(c *fiber.Ctx) error {
-		// Estructura para recibir el JSON de la solicitud
+		// Estructura para recibir el JSON
 		type DiskRequest struct {
-			Path        string `json:"path"`
-			IsEncrypted bool   `json:"isEncrypted"`
-			Key         byte   `json:"key"` // Clave para desencriptar
+			Paths       []string `json:"paths"`       // Lista de rutas de archivos .mia
+			IsEncrypted bool     `json:"isEncrypted"` // Indica si están encriptados
+			Key         byte     `json:"key"`         // Clave para desencriptar si aplica
 		}
 
 		// Crear una instancia de DiskRequest para recibir los datos
@@ -148,64 +230,85 @@ func main() {
 			})
 		}
 
-		// Validar si el archivo existe
-		if _, err := os.Stat(req.Path); os.IsNotExist(err) {
+		// Validar que haya al menos un archivo
+		if len(req.Paths) == 0 {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Archivo no encontrado",
+				"error": "No se proporcionaron archivos de disco",
 			})
 		}
 
-		// Crear un DiskReader
-		diskReader, err := env.NewDiskReader(req.Path, req.IsEncrypted, req.Key)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": fmt.Sprintf("Error al abrir el disco: %v", err),
-			})
-		}
-		defer diskReader.Close() // Cerrar el archivo al final
+		// Lista para acumular la información de todos los discos
+		diskInfos := make([]fiber.Map, 0)
 
-		// Leer el MBR
-		mbr, err := diskReader.ReadMBR()
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": fmt.Sprintf("Error al leer el MBR: %v", err),
-			})
-		}
-
-		// Crear un map para devolver la información del MBR y particiones
-		mbrInfo := fiber.Map{
-			"diskSignature": mbr.MbrDiskSignature,
-			"diskSize":      mbr.MbrSize,
-			"partitions":    []fiber.Map{},
-		}
-
-		// Recorrer las particiones del MBR
-		for i, part := range mbr.MbrPartitions {
-			if part.Part_start != -1 {
-				partition := fiber.Map{
-					"index": i + 1,
-					"type":  string(part.Part_type[:]),
-					"start": part.Part_start,
-					"size":  part.Part_size,
-					"name":  string(part.Part_name[:]),
-				}
-
-				// Si es extendida, leer particiones lógicas
-				if part.Part_type[0] == 'E' {
-					partition["logicalPartitions"], err = diskReader.ReadLogicalPartitions(part.Part_start)
-					if err != nil {
-						return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-							"error": fmt.Sprintf("Error al leer particiones lógicas: %v", err),
-						})
-					}
-				}
-				// Agregar la partición al array de particiones
-				mbrInfo["partitions"] = append(mbrInfo["partitions"].([]fiber.Map), partition)
+		// Procesar cada archivo de disco
+		for _, path := range req.Paths {
+			// Validar si el archivo existe
+			if _, err := os.Stat(path); os.IsNotExist(err) {
+				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+					"error": fmt.Sprintf("Archivo %s no encontrado", path),
+				})
 			}
+
+			// Crear un DiskReader
+			diskReader, err := env.NewDiskReader(path, req.IsEncrypted, req.Key)
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": fmt.Sprintf("Error al abrir el disco %s: %v", path, err),
+				})
+			}
+			defer diskReader.Close()
+
+			// Leer el MBR
+			mbr, err := diskReader.ReadMBR()
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": fmt.Sprintf("Error al leer el MBR del disco %s: %v", path, err),
+				})
+			}
+
+			// Crear un map para devolver la información del MBR y particiones
+			mbrInfo := fiber.Map{
+				"diskSignature": mbr.MbrDiskSignature,
+				"diskSize":      mbr.MbrSize,
+				"partitions":    []fiber.Map{},
+				"fileName":      path,
+			}
+
+			// Recorrer las particiones del MBR
+			for i, part := range mbr.MbrPartitions {
+				if part.Part_start != -1 {
+					partition := fiber.Map{
+						"index": i + 1,
+						"type":  string(part.Part_type[:]),
+						"start": part.Part_start,
+						"size":  part.Part_size,
+						"name":  string(part.Part_name[:]),
+					}
+
+					// Si es extendida, leer particiones lógicas
+					if part.Part_type[0] == 'E' {
+						partition["logicalPartitions"], err = diskReader.ReadLogicalPartitions(part.Part_start)
+						if err != nil {
+							return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+								"error": fmt.Sprintf("Error al leer particiones lógicas del disco %s: %v", path, err),
+							})
+						}
+					}
+
+					// Agregar la partición al array de particiones
+					mbrInfo["partitions"] = append(mbrInfo["partitions"].([]fiber.Map), partition)
+				}
+			}
+
+			// Agregar la información del disco a la lista
+			diskInfos = append(diskInfos, mbrInfo)
 		}
 
-		// Devolver la información del disco y particiones en la respuesta
-		return c.JSON(mbrInfo)
+		// Devolver la información de todos los discos procesados
+		return c.JSON(fiber.Map{
+			"status": "success",
+			"disks":  diskInfos,
+		})
 	})
 
 	// Iniciar el servidor en el puerto 3000
