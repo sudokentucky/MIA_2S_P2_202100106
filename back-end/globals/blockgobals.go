@@ -273,3 +273,40 @@ func findLineInUsersFile(contenido string, name, entityType string) (string, int
 
 	return "", -1, fmt.Errorf("%s '%s' no encontrado en users.txt", entityType, name)
 }
+
+// ListUsersAndGroups : Devuelve una lista de usuarios y grupos almacenados en users.txt
+func ListUsersAndGroups(file *os.File, sb *structs.Superblock, inode *structs.Inode) (map[string][]string, error) {
+	// Leer el contenido completo de users.txt
+	contenido, err := ReadFileBlocks(file, sb, inode)
+	if err != nil {
+		return nil, fmt.Errorf("error leyendo users.txt: %v", err)
+	}
+
+	// Dividir el contenido en líneas
+	lineas := strings.Split(strings.TrimSpace(contenido), "\n")
+
+	// Map para almacenar los usuarios y grupos
+	data := make(map[string][]string)
+	data["users"] = []string{}
+	data["groups"] = []string{}
+
+	// Recorrer las líneas y filtrar usuarios y grupos
+	for _, linea := range lineas {
+		partes := strings.Split(linea, ",")
+		if len(partes) < 3 {
+			continue // Ignorar líneas mal formadas
+		}
+
+		// Verificar si es un grupo (tipo "G")
+		if partes[1] == "G" {
+			data["groups"] = append(data["groups"], linea)
+		}
+
+		// Verificar si es un usuario (tipo "U")
+		if partes[1] == "U" {
+			data["users"] = append(data["users"], linea)
+		}
+	}
+
+	return data, nil
+}
