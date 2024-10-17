@@ -16,14 +16,31 @@ mount -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia
 mount -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia  -name="Primaria3"
 mount -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia  -name="Primaria1"
 
-mkfs -id=061A -type=full -fs=3fs
 mkfs -id=061A -type=full -fs=2fs
+mkfs -id=061A -type=fast -fs=3fs
 login -user=root -pass=123 -id=061A
+mkdir -p -path="/home/usac/mia"
+mkdir -p -path="/usrs/usac/mia/"
 mkdir -path="/home"
+mkdir -path="usrs"
+mkfile -size=128 -path="/home/2.txt"
+cat -file1="/home/2.txt"
+mkdir -p -path="/user/path"
 mkdir -path="/home/usac"
 mkdir -path="/home/work"
-mkdir -path="/home/usac/mia"
+
+mkfs -id=061A -type=full -fs=3fs
+mkfile -size=27 -path="/usrs/usac/mia/1.txt"
 mkfile -size=10 -path="/home/usac/mia/1.txt"
+rename -path="/home/usac/mia/1.txt" -name="2.txt"
+mkfile -size=15 -path="/home/usac/mia/3.txt"
+mkfile -size=20 -path="/home/usac/hola.txt"
+mkfile -size=20 -path="/home/usac/buenas.txt"
+find -path="/" -name="*"
+find -path="/" -name="?.*"
+edit -path="/home/usac/mia/2.txt" -contenido="/home/usac/mia/3.txt"
+cat -file1="/home/usac/mia/2.txt"
+cat -file1="/home/usac/mia/3.txt"
 cat -file1="/home/usac/mia/1.txt"
 
 mkfile -size=10 -path="/home/mis documentos/archivo 1.txt"
