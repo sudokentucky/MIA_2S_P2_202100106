@@ -205,6 +205,32 @@ func findFileInode(file *os.File, sb *structs.Superblock, parentsDir []string, f
 	return fileInodeIndex, nil
 }
 
+func findFolderInode(file *os.File, sb *structs.Superblock, parentsDir []string) (int32, error) {
+	// Comenzar desde el inodo raíz (en la mayoría de los sistemas de archivos, el inodo raíz es el 0)
+	inodeIndex := int32(0)
+
+	// Navegar por los directorios padres
+	for len(parentsDir) > 0 {
+		dirName := parentsDir[0]
+
+		// Verificar si el directorio actual existe en el inodo actual
+		found, newInodeIndex, err := directoryExists(sb, file, inodeIndex, dirName)
+		if err != nil {
+			return -1, err // Error durante la búsqueda
+		}
+		if !found {
+			return -1, fmt.Errorf("directorio '%s' no encontrado", dirName)
+		}
+
+		// Actualizar el inodo actual para continuar con el siguiente directorio
+		inodeIndex = newInodeIndex
+		parentsDir = parentsDir[1:]
+	}
+
+	// Retorna el inodo del último directorio encontrado (el que estamos buscando)
+	return inodeIndex, nil
+}
+
 // readFileFromInode lee el contenido de un archivo desde su inodo
 func readFileFromInode(file *os.File, sb *structs.Superblock, inodeIndex int32) (string, error) {
 	inode := &structs.Inode{}
