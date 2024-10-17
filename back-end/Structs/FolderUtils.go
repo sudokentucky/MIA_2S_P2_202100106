@@ -8,137 +8,167 @@ import (
 	"time"
 )
 
-// createFolderInInode crea una carpeta en un inodo específico
 func (sb *Superblock) createFolderInInode(file *os.File, inodeIndex int32, parentsDir []string, destDir string) error {
-	inode, err := sb.loadInode(file, inodeIndex)
+	// Deserializar el inodo
+	inode := &Inode{}
+	fmt.Printf("Deserializando inodo %d\n", inodeIndex) // Depuración
+	err := inode.Decode(file, int64(sb.S_inode_start+(inodeIndex*sb.S_inode_size)))
 	if err != nil {
 		return fmt.Errorf("error al deserializar inodo %d: %v", inodeIndex, err)
 	}
-	//Se verifica si el inodo es de tipo archivo
+
+	fmt.Printf("Inodo %d deserializado. Tipo: %c\n", inodeIndex, inode.I_type[0]) // Depuración
+
+	// Verificar si el inodo es de tipo carpeta
 	if inode.I_type[0] != '0' {
-		return fmt.Errorf("inodo %d no es una carpeta", inodeIndex)
+		fmt.Printf("Inodo %d no es una carpeta, es de tipo: %c\n", inodeIndex, inode.I_type[0]) // Depuración
+		return nil
 	}
-	//se recorre los bloques del inodo
-	for _, blockIndex := range inode.I_block {
-		if blockIndex == -1 { //si el bloque esta
-			break
+
+	// Iterar sobre los bloques del inodo
+	for blockIdx := 0; blockIdx < len(inode.I_block); blockIdx++ {
+		blockIndex := inode.I_block[blockIdx]
+
+		// Si el bloque no está asignado, asignar uno nuevo
+		if blockIndex == -1 {
+			fmt.Printf("Inodo %d no tiene un bloque en la posición %d, asignando uno nuevo.\n", inodeIndex, blockIdx) // Depuración
+			blockIndex, err = sb.AssignNewBlock(file, inode, blockIdx)
+			if err != nil {
+				return fmt.Errorf("error al asignar nuevo bloque al inodo %d: %v", inodeIndex, err)
+			}
+
+			// Serializar el inodo actualizado con el nuevo bloque
+			err = inode.Encode(file, int64(sb.S_inode_start+(inodeIndex*sb.S_inode_size)))
+			if err != nil {
+				return fmt.Errorf("error al serializar el inodo %d después de asignar bloque: %v", inodeIndex, err)
+			}
+			fmt.Printf("Inodo %d actualizado con el nuevo bloque %d.\n", inodeIndex, blockIndex)
 		}
-		//se carga el bloque de carpeta
-		block, err := sb.loadFolderBlock(file, blockIndex)
+
+		// Deserializar el bloque existente
+		fmt.Printf("Deserializando bloque %d del inodo %d\n", blockIndex, inodeIndex) // Depuración
+		block := &FolderBlock{}
+		err = block.Decode(file, int64(sb.S_block_start+(blockIndex*sb.S_block_size))) // Calcular la posición del bloque
 		if err != nil {
 			return fmt.Errorf("error al deserializar bloque %d: %v", blockIndex, err)
 		}
+		fmt.Printf("Bloque %d del inodo %d deserializado correctamente\n", blockIndex, inodeIndex) // Depuración
 
+		// Iterar sobre el contenido del bloque
 		for indexContent := 2; indexContent < len(block.B_content); indexContent++ {
 			content := block.B_content[indexContent]
 
-			if len(parentsDir) > 0 {
+			// Si estamos manejando carpetas padre
+			if len(parentsDir) != 0 {
 				if content.B_inodo == -1 {
+					fmt.Printf("No se encontró carpeta padre en inodo %d en la posición %d, terminando.\n", inodeIndex, indexContent) // Depuración
 					break
 				}
 
+				// Obtener la carpeta padre más cercana
 				parentDir, err := utils.First(parentsDir)
 				if err != nil {
 					return err
 				}
 
 				contentName := strings.Trim(string(content.B_name[:]), "\x00 ")
-				if strings.EqualFold(contentName, parentDir) {
-					return sb.createFolderInInode(file, content.B_inodo, utils.RemoveElement(parentsDir, 0), destDir)
-				}
-			} else {
-				if content.B_inodo == -1 {
-					newInode, err := sb.AssignNewInode(file)
+				parentDirName := strings.Trim(parentDir, "\x00 ")
+				fmt.Printf("Comparando '%s' con el nombre de la carpeta padre '%s'\n", contentName, parentDirName) // Depuración
+
+				if strings.EqualFold(contentName, parentDirName) {
+					fmt.Printf("Carpeta padre '%s' encontrada en inodo %d. Recursión para crear el siguiente directorio.\n", parentDirName, content.B_inodo) // Depuración
+					// Llamada recursiva para seguir creando carpetas
+					err := sb.createFolderInInode(file, content.B_inodo, utils.RemoveElement(parentsDir, 0), destDir)
 					if err != nil {
-						return fmt.Errorf("error asignando nuevo inodo para '%s': %v", destDir, err)
+						return err
 					}
-
-					copy(content.B_name[:], destDir)
-					content.B_inodo = newInode
-					block.B_content[indexContent] = content
-
-					err = sb.saveFolderBlock(file, blockIndex, block)
-					if err != nil {
-						return fmt.Errorf("error al guardar el bloque %d: %v", blockIndex, err)
-					}
-
-					err = sb.createFolderStructure(file, newInode, inodeIndex)
-					if err != nil {
-						return fmt.Errorf("error al crear estructura de carpeta '%s': %v", destDir, err)
-					}
-
 					return nil
 				}
+			} else { // Llegamos al directorio destino (destDir)
+				if content.B_inodo != -1 {
+					fmt.Printf("El inodo %d ya está ocupado con otro contenido, saltando al siguiente.\n", content.B_inodo) // Depuración
+					continue
+				}
+
+				fmt.Printf("Asignando el nombre del directorio '%s' al bloque en la posición %d\n", destDir, indexContent) // Depuración
+				// Actualizar el contenido del bloque con el nuevo directorio
+				copy(content.B_name[:], destDir)
+				content.B_inodo = sb.S_inodes_count
+
+				// Actualizar el bloque con el nuevo contenido
+				block.B_content[indexContent] = content
+
+				// Serializar el bloque
+				err = block.Encode(file, int64(sb.S_block_start+(blockIndex*sb.S_block_size)))
+				if err != nil {
+					return fmt.Errorf("error al serializar el bloque %d: %v", blockIndex, err)
+				}
+				fmt.Printf("Bloque %d actualizado con éxito.\n", blockIndex) // Depuración
+
+				// Crear el inodo de la nueva carpeta
+				folderInode := &Inode{
+					I_uid:   1,
+					I_gid:   1,
+					I_size:  0,
+					I_atime: float32(time.Now().Unix()),
+					I_ctime: float32(time.Now().Unix()),
+					I_mtime: float32(time.Now().Unix()),
+					I_block: [15]int32{sb.S_blocks_count, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+					I_type:  [1]byte{'0'}, // Tipo carpeta
+					I_perm:  [3]byte{'6', '6', '4'},
+				}
+
+				// Serializar el inodo de la nueva carpeta
+				err = folderInode.Encode(file, int64(sb.S_first_ino))
+				if err != nil {
+					return fmt.Errorf("error al serializar el inodo del directorio '%s': %v", destDir, err)
+				}
+
+				// Actualizar el bitmap de inodos
+				err = sb.UpdateBitmapInode(file, sb.S_inodes_count, true)
+				if err != nil {
+					return fmt.Errorf("error al actualizar el bitmap de inodos para el directorio '%s': %v", destDir, err)
+				}
+
+				sb.UpdateSuperblockAfterInodeAllocation()
+
+				// Crear el bloque de la nueva carpeta
+				folderBlock := NewFolderBlock(sb.S_inodes_count, inodeIndex, nil)
+				err = folderBlock.Encode(file, int64(sb.S_first_blo))
+				if err != nil {
+					return fmt.Errorf("error al serializar el bloque del directorio '%s': %v", destDir, err)
+				}
+
+				// Actualizar el bitmap de bloques
+				err = sb.UpdateBitmapBlock(file, sb.S_blocks_count, true)
+				if err != nil {
+					return fmt.Errorf("error al actualizar el bitmap de bloques para el directorio '%s': %v", destDir, err)
+				}
+
+				sb.UpdateSuperblockAfterBlockAllocation()
+
+				fmt.Printf("Directorio '%s' creado correctamente en inodo %d.\n", destDir, sb.S_inodes_count) // Depuración
+				return nil
 			}
+		}
+
+		// Si el bloque está lleno, asignar uno nuevo
+		if block.IsFull() {
+			fmt.Printf("El bloque %d del inodo %d está lleno, asignando un nuevo bloque.\n", blockIndex, inodeIndex) // Depuración
+			blockIndex, err = sb.AssignNewBlock(file, inode, blockIdx)
+			if err != nil {
+				return fmt.Errorf("error al asignar nuevo bloque al inodo %d: %v", inodeIndex, err)
+			}
+
+			err = inode.Encode(file, int64(sb.S_inode_start+(inodeIndex*sb.S_inode_size)))
+			if err != nil {
+				return fmt.Errorf("error al serializar el inodo %d después de asignar nuevo bloque: %v", inodeIndex, err)
+			}
+			fmt.Printf("Inodo %d actualizado con nuevo bloque %d.\n", inodeIndex, blockIndex)
 		}
 	}
 
-	return fmt.Errorf("no se encontraron bloques disponibles para la carpeta '%s'", destDir)
-}
-
-// loadInode deserializa un inodo desde un archivo
-func (sb *Superblock) loadInode(file *os.File, inodeIndex int32) (*Inode, error) {
-	inode := &Inode{}
-	err := inode.Decode(file, sb.CalculateInodeOffset(inodeIndex))
-	if err != nil {
-		return nil, err
-	}
-	return inode, nil
-}
-
-// loadFolderBlock deserializa un bloque de carpeta desde un archivo
-func (sb *Superblock) loadFolderBlock(file *os.File, blockIndex int32) (*FolderBlock, error) {
-	block := &FolderBlock{}
-	err := block.Decode(file, int64(sb.S_block_start+(blockIndex*sb.S_block_size)))
-	if err != nil {
-		return nil, err
-	}
-	return block, nil
-}
-
-// saveFolderBlock guarda un bloque de carpeta en el archivo
-func (sb *Superblock) saveFolderBlock(file *os.File, blockIndex int32, block *FolderBlock) error {
-	return block.Encode(file, int64(sb.S_block_start+(blockIndex*sb.S_block_size)))
-}
-
-// createFolderStructure crea la estructura básica para un nuevo directorio
-func (sb *Superblock) createFolderStructure(file *os.File, newInode int32, parentInodeIndex int32) error {
-	inode := &Inode{
-		I_uid:   1,
-		I_gid:   1,
-		I_size:  0,
-		I_atime: float32(time.Now().Unix()),
-		I_ctime: float32(time.Now().Unix()),
-		I_mtime: float32(time.Now().Unix()),
-		I_block: [15]int32{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-		I_type:  [1]byte{'0'},
-		I_perm:  [3]byte{'6', '6', '4'},
-	}
-
-	blockIndex, err := sb.AssignNewBlock(file, inode, 0)
-	if err != nil {
-		return fmt.Errorf("error al asignar nuevo bloque: %v", err)
-	}
-
-	folderBlock := &FolderBlock{
-		B_content: [4]FolderContent{
-			{B_name: [12]byte{'.'}, B_inodo: newInode},
-			{B_name: [12]byte{'.', '.'}, B_inodo: parentInodeIndex},
-			{B_name: [12]byte{'-'}, B_inodo: -1},
-			{B_name: [12]byte{'-'}, B_inodo: -1},
-		},
-	}
-
-	err = sb.saveFolderBlock(file, blockIndex, folderBlock)
-	if err != nil {
-		return fmt.Errorf("error al serializar el bloque: %v", err)
-	}
-
-	err = inode.Encode(file, sb.CalculateInodeOffset(newInode))
-	if err != nil {
-		return fmt.Errorf("error al serializar el inodo: %v", err)
-	}
-
+	fmt.Printf("No se encontraron bloques disponibles para crear la carpeta '%s' en inodo %d\n", destDir, inodeIndex) // Depuración
 	return nil
 }
 
