@@ -12,7 +12,8 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen flex flex-col">
-        <Navbar navbarUpdated={navbarUpdated} />
+        {/* */}
+        <Navbar />
         <div className="flex-grow p-4" style={{ backgroundColor: "#E6E6FA" }}>
           <div className="container mx-auto">
             <Routes>

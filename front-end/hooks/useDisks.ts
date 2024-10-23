@@ -5,31 +5,32 @@ export const useDisks = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const readDisks = async (files: FileList) => {
+  const readDisk = async (filePath: string) => {
     setLoading(true);
     setError(null);
 
-    const paths = Array.from(files).map((file) => file.name);
-
     try {
-      const response = await fetch("http://localhost:3000/disk/read", {
+      const response = await fetch("http://localhost:3000/api/disk", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          paths: paths,
-          isEncrypted: false,
-          key: 0, // Cambia si usas encriptación
+          path: filePath,  // Enviar la ruta absoluta del archivo
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Error al leer los discos");
+        throw new Error("Error al leer el disco");
       }
 
       const data = await response.json();
-      setDisks(data.disks);
+      
+      // Formatear los discos y particiones correctamente
+      setDisks((prevDisks) => [
+        ...prevDisks,
+        { fileName: filePath, partitions: data.partitions }, // Añadir nuevo disco con particiones
+      ]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -37,5 +38,5 @@ export const useDisks = () => {
     }
   };
 
-  return { disks, loading, error, readDisks };
+  return { disks, loading, error, readDisk };
 };

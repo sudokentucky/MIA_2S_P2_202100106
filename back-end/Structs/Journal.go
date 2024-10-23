@@ -145,9 +145,6 @@ func (journal *Journal) SaveJournalEntry(file *os.File, journaling_start int64, 
 	// Crear la nueva entrada en el Journal
 	journal.CreateJournalEntry(operation, path, content)
 
-	// Incrementar el contador de operaciones
-	journal.J_count++
-
 	// Serializar el Journal en el archivo
 	err := journal.Encode(file, journaling_start)
 	if err != nil {

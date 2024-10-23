@@ -2,6 +2,7 @@ package structs
 
 import (
 	"backend/utils"
+	"encoding/binary"
 	"fmt"
 	"os"
 	"strings"
@@ -104,6 +105,34 @@ func (sb *Superblock) createFolderInInode(file *os.File, inodeIndex int32, paren
 					return fmt.Errorf("error al serializar el bloque %d: %v", blockIndex, err)
 				}
 				fmt.Printf("Bloque %d actualizado con éxito.\n", blockIndex) // Depuración
+
+				// Verificación adicional para realizar el journaling si el sistema de archivos lo requiere
+				if sb.S_filesystem_type == 3 { // Aquí usamos el tipo de sistema de archivos (ext3)
+					FolderJournal := &Journal{
+						J_count: sb.S_inodes_count,
+					}
+					var superblockSize int64 = int64(binary.Size(sb))
+					journaling_start := superblockSize
+					err = FolderJournal.SaveJournalEntry(
+						file,
+						journaling_start, // Iniciar el journaling después del superbloque
+						"mkdir",          // Tipo de operación: crear carpeta
+						"/"+destDir,      // Ruta del directorio
+						"",               // No hay contenido asociado en este caso
+					)
+					if err != nil {
+						return fmt.Errorf("error al guardar la entrada en el journal: %w", err)
+					}
+
+					//Codificar el journal
+					err = FolderJournal.Encode(file, journaling_start)
+					if err != nil {
+						return fmt.Errorf("error al serializar el journal: %w", err)
+					}
+
+					fmt.Printf("Entrada de journal creada para la carpeta '%s'\n", destDir) // Depuración
+					FolderJournal.Print()                                                   // Depuración
+				}
 
 				// Crear el inodo de la nueva carpeta
 				folderInode := &Inode{

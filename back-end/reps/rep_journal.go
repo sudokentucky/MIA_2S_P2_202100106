@@ -3,6 +3,7 @@ package reps
 import (
 	structs "backend/Structs"
 	"backend/utils"
+	"encoding/binary"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,8 +13,9 @@ import (
 func ReportJournal(superblock *structs.Superblock, diskPath string, path string) error {
 	// Calcular el inicio del Journal solo si es EXT3
 	var journalStart int64
+	var superblockSize int64 = int64(binary.Size(superblock))
 	if superblock.S_filesystem_type == 3 {
-		journalStart = int64(superblock.S_block_start) + int64(superblock.S_block_size)
+		journalStart = superblockSize
 	} else {
 		return fmt.Errorf("el sistema de archivos no soporta Journaling (EXT2)")
 	}
@@ -41,7 +43,7 @@ func ReportJournal(superblock *structs.Superblock, diskPath string, path string)
 	dotContent := initJournalDotGraph()
 
 	// Utilizar el método GenerateGraph del Journal
-	dotGraph, err := journal.GenerateGraph(journalStart, superblock.S_inodes_count, file)
+	dotGraph, err := journal.GenerateGraph(journalStart, journal.J_count, file)
 	if err != nil {
 		return err
 	}

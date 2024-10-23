@@ -1,39 +1,18 @@
 import { useState, useEffect } from "react";
-import { useLogin } from "../hooks/useLogin"; // Importa el hook personalizado
+import { useLogin } from "../hooks/useLogin"; // Hook personalizado para manejar la solicitud de login
 import { useNavigate } from "react-router-dom";
-import Message from "./Message"; // Importar el componente Message
+import Message from "./Message"; // Importar el componente Message para mostrar mensajes
+import { useAuth } from "../hooks/useAuth"; // Importar el hook useAuth para manejar el estado de autenticación
 
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [userId, setUserId] = useState(""); // ID del usuario
   const [error, setError] = useState<string | null>(null); // Estado para errores en el frontend
-  const [checkingUser, setCheckingUser] = useState(true);  // Estado para saber si se está comprobando si ya hay un usuario logueado
   const { login, loading, backendMessage, messageType } = useLogin(); // Usa el hook personalizado
+  const { Login } = useAuth(); // Traemos la función Login de Zustand para actualizar el estado global
   const navigate = useNavigate();
 
-  // Función para verificar si hay un usuario ya logueado
-  const checkUserLoggedIn = async () => {
-    try {
-      const response = await fetch("http://localhost:3000/users/logged-in"); // Llama al endpoint que comprueba si hay usuario logueado
-      const data = await response.json();
-      if (data.status === "success") {
-        setError(`Ya hay un usuario logueado: ${data.user}`);
-        setTimeout(() => {
-          navigate("/user-management"); // Redirige a la gestión de usuarios si hay un usuario logueado
-        }, 2000); // Espera 2 segundos antes de redirigir para que el usuario vea el mensaje
-      }
-    } catch (err) {
-      setError(null); // No hay usuario logueado, permite continuar con el login normal
-    } finally {
-      setCheckingUser(false); // Termina la comprobación
-    }
-  };
-
-  // Llamar a checkUserLoggedIn cuando el componente se monta
-  useEffect(() => {
-    checkUserLoggedIn();
-  }, []);
 
   // Manejar el envío del formulario de login
   const handleLogin = (e: React.FormEvent) => {
@@ -47,13 +26,14 @@ function Login() {
 
     // Si los campos están completos, se procede con el login
     setError(null); // Limpiar cualquier error anterior
-    login(username, password, userId); // Llamamos a la función login desde el hook
+    login(username, password, userId).then((result) => {
+      if (result === "success") {
+        Login(); // Actualizamos el estado de auth en Zustand cuando el login es exitoso
+        navigate("/user-management"); // Redirigir a la gestión de usuarios
+      }
+    });
   };
 
-  // Si está verificando si hay un usuario logueado, muestra un mensaje de carga
-  if (checkingUser) {
-    return <div className="text-center text-dracula-300">Verificando si hay un usuario logueado...</div>;
-  }
 
   return (
     <div className="flex justify-center items-center min-h-screen">

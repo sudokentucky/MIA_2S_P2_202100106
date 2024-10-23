@@ -2,13 +2,13 @@ package structs
 
 import (
 	"backend/utils"
+	"encoding/binary"
 	"fmt" // Importamos fmt para los mensajes de depuración
 	"os"
 	"strings"
 	"time"
 )
 
-// createFolderinode crea una carpeta en un inodo específico
 func (sb *Superblock) createFileInInode(file *os.File, inodeIndex int32, parentsDir []string, destFile string, fileSize int, fileContent []string) error {
 	fmt.Printf("Intentando crear archivo '%s' en inodo index %d\n", destFile, inodeIndex) // Depuración
 
@@ -87,6 +87,33 @@ func (sb *Superblock) createFileInInode(file *os.File, inodeIndex int32, parents
 				}
 
 				fmt.Printf("Bloque actualizado para el archivo '%s' en el inodo %d\n", destFile, sb.S_inodes_count) // Depuración
+
+				// Verificación adicional para realizar el journaling si el sistema de archivos lo requiere
+				if sb.S_filesystem_type == 3 { // Aquí usamos el tipo de sistema de archivos (por ejemplo, ext3)
+					FileJournal := &Journal{
+						J_count: sb.S_inodes_count,
+					}
+					var superblockSize int64 = int64(binary.Size(sb))
+					journaling_start := superblockSize
+					err := FileJournal.SaveJournalEntry(
+						file,
+						journaling_start,              // Iniciar el journaling después del superbloque
+						"mkfile",                      // Tipo de operación: crear archivo
+						"/"+destFile,                  // Ruta del archivo
+						strings.Join(fileContent, ""), // El contenido del archivo
+					)
+					if err != nil {
+						return fmt.Errorf("error al guardar la entrada en el journal: %w", err)
+					}
+
+					//Codificar el journal
+					err = FileJournal.Encode(file, journaling_start)
+					if err != nil {
+						return fmt.Errorf("error al codificar el journal: %w", err)
+					}
+					fmt.Println("Journal creado para el archivo:", destFile)
+					FileJournal.Print()
+				}
 
 				// Crear el inodo del archivo
 				fileInode := &Inode{

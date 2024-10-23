@@ -2,9 +2,9 @@ package main
 
 import (
 	analyzer "backend/Analyzer" // Importa el paquete "analyzer" desde el directorio "backend/analyzer"
-	env "backend/Env"
 	structs "backend/Structs"
-	commands "backend/commands/Users"
+	commands "backend/commands"
+	usercommands "backend/commands/Users"
 	"backend/globals"
 	"encoding/binary"
 	"fmt"
@@ -15,6 +15,8 @@ import (
 	"github.com/gofiber/fiber/v2"                 // Importa el paquete Fiber para crear la API
 	"github.com/gofiber/fiber/v2/middleware/cors" // Importa el middleware CORS para manejar CORS
 )
+
+var diskManager = commands.NewDiskManager() // Crear una nueva instancia de DiskManager
 
 func main() {
 	// Crear una nueva instancia de Fiber
@@ -73,6 +75,45 @@ func main() {
 			"results": results,
 		})
 	})
+
+	app.Post("/api/disk", func(c *fiber.Ctx) error {
+		// Estructura para recibir el JSON
+		type DiskRequest struct {
+			Path string `json:"path"`
+		}
+
+		// Parsear el cuerpo de la solicitud
+		var req DiskRequest
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Formato JSON inválido",
+			})
+		}
+
+		// Verificar que se proporcionó una ruta válida
+		if req.Path == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Debe proporcionar una ruta válida al archivo binario",
+			})
+		}
+
+		// Crear una instancia del comando de disco
+		diskCommand := commands.NewDiskCommand()
+
+		// Ejecutar el comando para mostrar el disco
+		result, err := diskCommand.ShowDisk(req.Path)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": fmt.Sprintf("Error al mostrar el disco: %v", err),
+			})
+		}
+
+		// Retornar la salida del comando
+		return c.JSON(fiber.Map{
+			"result": result,
+		})
+	})
+
 	// Definir la ruta POST para el inicio de sesión de los usuarios
 	app.Post("/users/login", func(c *fiber.Ctx) error {
 		type LoginRequest struct {
@@ -89,29 +130,14 @@ func main() {
 			})
 		}
 
-		// Validar campos vacíos
-		if req.Username == "" || req.Password == "" || req.ID == "" {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Todos los campos son obligatorios: usuario, contraseña e ID.",
-			})
-		}
-
-		// Simular la lógica de autenticación (puedes adaptarlo a tu sistema)
+		// Crear el comando de login sin verificar nada en este nivel
 		loginCommand := fmt.Sprintf("login -user=%s -pass=%s -id=%s", req.Username, req.Password, req.ID)
-		result, err := commands.ParserLogin(strings.Split(loginCommand, " "))
-		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Usuario o contraseña incorrectos.",
-			})
-		}
 
-		// Si el login es exitoso
-		return c.JSON(fiber.Map{
-			"status":  "success",
-			"message": result,
-		})
+		// Pasar los parámetros directamente al comando ParserLogin
+		result, _ := usercommands.ParserLogin(strings.Split(loginCommand, " "))
+
+		// Retornar directamente el resultado del comando, que ya maneja los errores
+		return c.JSON(result)
 	})
 
 	// Definir la ruta GET para retornar la lista de usuarios y grupos
@@ -209,105 +235,6 @@ func main() {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"status":  "success",
 			"message": fmt.Sprintf("Hay %d particiones montadas. Puede proceder con el login.", len(globals.MountedPartitions)),
-		})
-	})
-
-	app.Post("/disk/read", func(c *fiber.Ctx) error {
-		// Estructura para recibir el JSON
-		type DiskRequest struct {
-			Paths       []string `json:"paths"`       // Lista de rutas de archivos .mia
-			IsEncrypted bool     `json:"isEncrypted"` // Indica si están encriptados
-			Key         byte     `json:"key"`         // Clave para desencriptar si aplica
-		}
-
-		// Crear una instancia de DiskRequest para recibir los datos
-		var req DiskRequest
-
-		// Parsear el cuerpo de la solicitud como JSON
-		if err := c.BodyParser(&req); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Invalid JSON",
-			})
-		}
-
-		// Validar que haya al menos un archivo
-		if len(req.Paths) == 0 {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "No se proporcionaron archivos de disco",
-			})
-		}
-
-		// Lista para acumular la información de todos los discos
-		diskInfos := make([]fiber.Map, 0)
-
-		// Procesar cada archivo de disco
-		for _, path := range req.Paths {
-			// Validar si el archivo existe
-			if _, err := os.Stat(path); os.IsNotExist(err) {
-				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-					"error": fmt.Sprintf("Archivo %s no encontrado", path),
-				})
-			}
-
-			// Crear un DiskReader
-			diskReader, err := env.NewDiskReader(path, req.IsEncrypted, req.Key)
-			if err != nil {
-				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-					"error": fmt.Sprintf("Error al abrir el disco %s: %v", path, err),
-				})
-			}
-			defer diskReader.Close()
-
-			// Leer el MBR
-			mbr, err := diskReader.ReadMBR()
-			if err != nil {
-				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-					"error": fmt.Sprintf("Error al leer el MBR del disco %s: %v", path, err),
-				})
-			}
-
-			// Crear un map para devolver la información del MBR y particiones
-			mbrInfo := fiber.Map{
-				"diskSignature": mbr.MbrDiskSignature,
-				"diskSize":      mbr.MbrSize,
-				"partitions":    []fiber.Map{},
-				"fileName":      path,
-			}
-
-			// Recorrer las particiones del MBR
-			for i, part := range mbr.MbrPartitions {
-				if part.Part_start != -1 {
-					partition := fiber.Map{
-						"index": i + 1,
-						"type":  string(part.Part_type[:]),
-						"start": part.Part_start,
-						"size":  part.Part_size,
-						"name":  string(part.Part_name[:]),
-					}
-
-					// Si es extendida, leer particiones lógicas
-					if part.Part_type[0] == 'E' {
-						partition["logicalPartitions"], err = diskReader.ReadLogicalPartitions(part.Part_start)
-						if err != nil {
-							return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-								"error": fmt.Sprintf("Error al leer particiones lógicas del disco %s: %v", path, err),
-							})
-						}
-					}
-
-					// Agregar la partición al array de particiones
-					mbrInfo["partitions"] = append(mbrInfo["partitions"].([]fiber.Map), partition)
-				}
-			}
-
-			// Agregar la información del disco a la lista
-			diskInfos = append(diskInfos, mbrInfo)
-		}
-
-		// Devolver la información de todos los discos procesados
-		return c.JSON(fiber.Map{
-			"status": "success",
-			"disks":  diskInfos,
 		})
 	})
 

@@ -12,7 +12,7 @@ function UserManagement() {
   const [messageType, setMessageType] = useState<"success" | "error" | "">(""); // Estado para tipo de mensaje
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900"> {/* Fondo más oscuro */}
+    <div className="min-h-screen flex items-center justify-center"> {/* Fondo más oscuro */}
       <div className="w-full max-w-4xl p-8 bg-aro-900 rounded-lg shadow-lg transition-all transform hover:shadow-xl duration-300">
         <h1 className="text-3xl font-bold mb-6 text-center text-dracula-300">Gestión de Usuarios y Grupos</h1>
 

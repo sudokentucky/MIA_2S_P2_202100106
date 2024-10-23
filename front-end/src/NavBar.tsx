@@ -1,60 +1,43 @@
-import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { useCheckPartition } from "../hooks/useCheckPartition"; // Hook para verificar particiones
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom"; // Cambiar a Link para el logo
 import Message from "./Message"; // Importar el componente Message
+import { useAuth } from "../hooks/useAuth"; // Importar Zustand para el estado de autenticación
+import { useLogout } from "../hooks/useLogout"; // Importar el hook personalizado de logout
 
-interface NavbarProps {
-  navbarUpdated: boolean;
-}
-
-function Navbar({ navbarUpdated }: NavbarProps) {
-  const { partitionStatus } = useCheckPartition(); // Usar el hook para verificar particiones
+function Navbar() {
+  const { isLogged } = useAuth(); // Obtener el estado de autenticación desde Zustand
   const navigate = useNavigate(); // Hook para redirigir
-  const [checkingPartition, setCheckingPartition] = useState(false); // Estado para mostrar cargando
+  const location = useLocation(); // Obtener la ruta actual
   const [message, setMessage] = useState<string>(""); // Estado para el mensaje
   const [messageType, setMessageType] = useState<"success" | "error" | "info" | "">(""); // Estado para el tipo de mensaje
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false); // Estado de autenticación
+
+  const { logout, loading: logoutLoading, backendMessage, messageType: logoutMessageType } = useLogout(); // Usar el hook personalizado de logout
 
   useEffect(() => {
-    if (partitionStatus === "success") {
-      setMessage("Partición montada correctamente");
-      setMessageType("success");
-    }
-  }, [navbarUpdated, partitionStatus]);
+    if (backendMessage) {
+      setMessage(backendMessage);
+      setMessageType(logoutMessageType);
 
-  useEffect(() => {
-    if (message) {
       const timer = setTimeout(() => {
         setMessage("");
         setMessageType("");
-      }, 5000); // Elimina el mensaje después de 5 segundos
+      }, 5000); // Eliminar el mensaje después de 5 segundos
+
       return () => clearTimeout(timer);
     }
-  }, [message]);
+  }, [backendMessage, logoutMessageType]);
 
   const handleLoginClick = () => {
-    if (checkingPartition) return;
-
-    setCheckingPartition(true);
-
-    // Verificar partición
-    if (partitionStatus === "success") {
-      if (isAuthenticated) {
-        navigate("/user-management");
-      } else {
-        navigate("/login");
-      }
-    } else {
-      setMessage("Debe de haber al menos una partición montada para iniciar sesión.");
-      setMessageType("error");
-    }
-
-    setCheckingPartition(false);
+    navigate("/login"); // Redirigir directamente a la página de inicio de sesión
   };
 
-  // Función para manejar el click en el botón de visualizador de archivos
   const handleFileVisualizerClick = () => {
-    navigate("/file-visualizer");
+    navigate("/file-visualizer"); // Redirigir a la página del visualizador de archivos
+  };
+
+  const handleLogoutClick = () => {
+    logout(); // Ejecutar el proceso de logout
+    navigate("/"); // Redirigir a la página principal
   };
 
   return (
@@ -64,34 +47,58 @@ function Navbar({ navbarUpdated }: NavbarProps) {
           <div className="flex justify-between items-center">
             {/* Logo o título */}
             <div className="text-2xl font-bold">
-              <a href="/">Sistema de Archivos ext2</a>
+              {/* Cambiar <a> por <Link> para evitar recarga completa de la página */}
+              <Link to="/">Sistema de Archivos ext2</Link>
             </div>
-            
+
             {/* Enlaces de navegación */}
             <div className="space-x-4">
+              {/* Mostrar el botón de "Visualizador de Archivos" solo si el usuario está logueado */}
+              {isLogged && location.pathname !== "/file-visualizer" && (
+                <button
+                  onClick={handleFileVisualizerClick}
+                  className="bg-dracula-500 hover:bg-dracula-600 text-nosferatu-50 px-3 py-2 rounded-md"
+                >
+                  Discos
+                </button>
+              )}
 
+              {/* Mostrar enlace a "Gestión de Usuarios" si el usuario está logueado */}
+              {isLogged && (
+                <button
+                  onClick={() => navigate("/user-management")}
+                  className="bg-dracula-500 hover:bg-dracula-600 text-nosferatu-50 px-3 py-2 rounded-md"
+                >
+                  Usuarios y Grupos
+                </button>
+              )}
 
-              {/* Botón para el Visualizador de Archivos */}
-              <button
-                onClick={handleFileVisualizerClick}
-                className="bg-dracula-500 hover:bg-dracula-600 text-nosferatu-50 px-3 py-2 rounded-md"
-              >
-                Visualizador de Archivos
-              </button>
+              {/* Mostrar botón de "Inicio de Sesión" si el usuario no está logueado */}
+              {!isLogged && location.pathname !== "/login" && (
+                <button
+                  onClick={handleLoginClick}
+                  className="bg-dracula-500 hover:bg-dracula-600 text-nosferatu-50 px-3 py-2 rounded-md"
+                >
+                  Inicio de Sesión
+                </button>
+              )}
 
-              {/* Botón de "Inicio de Sesión" */}
-              <button
-                onClick={handleLoginClick}
-                className={`bg-dracula-500 hover:bg-dracula-600 text-nosferatu-50 px-3 py-2 rounded-md ${checkingPartition ? "opacity-50 cursor-wait" : ""}`}
-                disabled={checkingPartition}
-              >
-                {checkingPartition ? "Verificando..." : "Inicio de Sesión"}
-              </button>
+              {/* Mostrar botón de "Logout" si el usuario está logueado */}
+              {isLogged && (
+                <button
+                  onClick={handleLogoutClick}
+                  className="bg-red-500 hover:bg-red-600 text-nosferatu-50 px-3 py-2 rounded-md"
+                  disabled={logoutLoading} // Deshabilitar si está procesando logout
+                >
+                  {logoutLoading ? "Cerrando sesión..." : "Cerrar Sesión"}
+                </button>
+              )}
             </div>
           </div>
         </div>
       </nav>
 
+      {/* Mostrar el mensaje si existe */}
       {message && <Message text={message} type={messageType} />}
     </>
   );

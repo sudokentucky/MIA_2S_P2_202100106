@@ -17,12 +17,12 @@ mount -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia
 mount -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia  -name="Primaria1"
 
 mkfs -id=061A -type=full -fs=2fs
-mkfs -id=061A -type=fast -fs=3fs
+mkfs -id=061A -type=full -fs=3fs
 login -user=root -pass=123 -id=061A
 mkdir -p -path="/home/usac/mia"
 mkdir -p -path="/usrs/usac/mia/"
 mkdir -path="/home"
-mkdir -path="usrs"
+mkdir -path="/usrs"
 mkfile -size=128 -path="/home/2.txt"
 cat -file1="/home/2.txt"
 mkdir -p -path="/user/path"
@@ -100,3 +100,5 @@ rep -id=061A -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Reps/Example_b
 rep -id=061A -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Reps/ExampleDisk_journal.png -name=journal
 rep -id=061A -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Reps/Example_inode.png -name=inode
 rmdisk -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia 
+
+/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia

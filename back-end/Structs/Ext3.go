@@ -8,9 +8,11 @@ import (
 func (sb *Superblock) CreateUsersFileExt3(file *os.File, journaling_start int64) error {
 	// ----------- Creamos / (la raíz) -----------
 	// Crear journal y registrar la operación de creación de la raíz en el journal
-	journal := &Journal{}
+	rootJournal := &Journal{
+		J_count: sb.S_inodes_count,
+	}
 
-	err := journal.SaveJournalEntry(
+	err := rootJournal.SaveJournalEntry(
 		file,             // El archivo donde se serializa el journal
 		journaling_start, // Inicio del journal en el archivo
 		"mkdir",          // Tipo de operación (crear directorio)
@@ -19,6 +21,11 @@ func (sb *Superblock) CreateUsersFileExt3(file *os.File, journaling_start int64)
 	)
 	if err != nil {
 		return fmt.Errorf("error al guardar la entrada de la raíz en el journal: %w", err)
+	}
+	//Codificar el journal
+	err = rootJournal.Encode(file, journaling_start)
+	if err != nil {
+		return fmt.Errorf("error al codificar el journal: %w", err)
 	}
 
 	// Encontrar el primer bloque libre para la raíz
@@ -74,8 +81,13 @@ func (sb *Superblock) CreateUsersFileExt3(file *os.File, journaling_start int64)
 	rootUser := NewUser("1", "root", "root", "123")
 	usersText := fmt.Sprintf("%s\n%s\n", rootGroup.ToString(), rootUser.ToString())
 
+	//Se crea el journal de users.txt
+	FileJournal := &Journal{
+		J_count: sb.S_inodes_count,
+	}
+
 	// Registrar la operación de creación de /users.txt en el journal
-	err = journal.SaveJournalEntry(
+	err = FileJournal.SaveJournalEntry(
 		file,             // El archivo donde se serializa el journal
 		journaling_start, // Inicio del journal en el archivo
 		"mkfile",         // Tipo de operación (crear archivo)
@@ -86,6 +98,11 @@ func (sb *Superblock) CreateUsersFileExt3(file *os.File, journaling_start int64)
 		return fmt.Errorf("error al guardar la entrada del archivo /users.txt en el journal: %w", err)
 	}
 
+	//Codificar el journal
+	err = FileJournal.Encode(file, journaling_start)
+	if err != nil {
+		return fmt.Errorf("error al codificar el journal: %w", err)
+	}
 	// Encontrar el primer bloque libre para /users.txt
 	usersBlockIndex, err := sb.FindNextFreeBlock(file)
 	if err != nil {
@@ -146,5 +163,8 @@ func (sb *Superblock) CreateUsersFileExt3(file *os.File, journaling_start int64)
 	//mostar las estructuras
 	fmt.Println("Bloques")
 	sb.PrintBlocks(file.Name())
+	fmt.Println("Journal")
+	rootJournal.Print()
+	FileJournal.Print()
 	return nil
 }

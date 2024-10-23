@@ -103,6 +103,23 @@ func (mbr *MBR) CalculateAvailableSpace() (int32, error) {
 	return totalSize - usedSpace, nil
 }
 
+// ListPartitions obtiene la información del MBR y sus particiones
+func (mbr *MBR) ListPartitions() []map[string]interface{} {
+	partitions := []map[string]interface{}{}
+
+	// Recorrer las particiones del MBR
+	for _, partition := range mbr.MbrPartitions {
+		if partition.Part_start != -1 {
+			partitionData := map[string]interface{}{
+				"name": strings.Trim(string(partition.Part_name[:]), "\x00 "), // Eliminamos los caracteres nulos (\x00)
+			}
+			partitions = append(partitions, partitionData)
+		}
+	}
+
+	return partitions
+}
+
 // Método para imprimir los valores del MBR
 func (mbr *MBR) Print() {
 	creationTime := time.Unix(int64(mbr.MbrCreacionDate), 0)
