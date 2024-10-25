@@ -139,6 +139,17 @@ func (sb *Superblock) PrintBlocks(path string) error {
 	return nil
 }
 
+func (sb *Superblock) isDirectory(file *os.File, inodeIndex int32) (bool, error) {
+	inode := &Inode{}
+	err := inode.Decode(file, int64(sb.S_inode_start+(inodeIndex*sb.S_inode_size)))
+	if err != nil {
+		return false, fmt.Errorf("error al leer el inodo %d: %v", inodeIndex, err)
+	}
+
+	// Si el tipo de inodo es '0', es una carpeta
+	return inode.I_type[0] == '0', nil
+}
+
 func (sb *Superblock) FindNextFreeBlock(file *os.File) (int32, error) {
 	totalBlocks := sb.S_free_blocks_count // Usar S_blocks_count para iterar sobre el rango completo de bloques
 	fmt.Printf("Total de bloques disponibles: %d\n", totalBlocks)
