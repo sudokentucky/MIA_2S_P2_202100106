@@ -48,7 +48,7 @@ function Navbar() {
             {/* Logo o título */}
             <div className="text-2xl font-bold">
               {/* Cambiar <a> por <Link> para evitar recarga completa de la página */}
-              <Link to="/">Sistema de Archivos ext2</Link>
+              <Link to="/">Sistema de Archivos Ext2 | Ext3</Link>
             </div>
 
             {/* Enlaces de navegación */}
