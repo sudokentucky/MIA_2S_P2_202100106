@@ -1,24 +1,27 @@
-import { useParams, useNavigate } from "react-router-dom";
-import partitionIcon from "/public/partition.svg"; 
+import { useNavigate, useLocation } from "react-router-dom";
+import partitionIcon from "/public/partition.svg";
+import { usePartitions } from "../hooks/usePartition";
 
-interface PartitionVisualizerProps {
-  disks: any[];
-}
+const PartitionVisualizer = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
 
-const PartitionVisualizer = ({ disks }: PartitionVisualizerProps) => {
-  const { diskIndex } = useParams<{ diskIndex: string }>(); // Obtener el índice del disco de la URL
-  const navigate = useNavigate(); // Hook para navegar a otra ruta
-  const disk = disks[parseInt(diskIndex || "0", 10)]; // Obtener el disco seleccionado
+  const diskPath = location.state?.diskPath;
 
-  // Función para regresar a la lista de discos
+  const { partitions, loading, error } = usePartitions(diskPath);
+
   const goBack = () => {
-    navigate("/"); // Navegar de regreso al FileVisualizer
+    navigate("/");
+  };
+
+  const handleViewPartitionTree = (partitionName: string) => {
+    navigate("/partition-tree", { state: { diskPath, partitionName } }); // Pasamos diskPath y partitionName
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
       <div className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold mb-6">Particiones del Disco: {disk?.fileName}</h1>
+        <h1 className="text-3xl font-bold mb-6">Particiones del Disco: {diskPath}</h1>
 
         <div className="mb-4">
           <button
@@ -29,19 +32,27 @@ const PartitionVisualizer = ({ disks }: PartitionVisualizerProps) => {
           </button>
         </div>
 
-        {/* Mostrar particiones del disco */}
         <div className="mt-8">
           <h2 className="text-2xl font-bold mb-4">Particiones</h2>
 
-          {disk?.partitions?.length > 0 ? (
-            disk.partitions.map((partition: any, index: number) => (
-              <div key={index} className="flex items-center mb-4">
+          {loading && <p>Cargando particiones...</p>}
+          {error && <p className="text-red-500">{error}</p>}
+
+          {partitions.length > 0 ? (
+            partitions.map((partition, index) => (
+              <div
+                key={index}
+                className="flex items-center mb-4 cursor-pointer"
+                onClick={() => handleViewPartitionTree(partition.name)} // Manejamos el clic en la partición
+              >
                 <img src={partitionIcon} alt="Partición" className="w-8 h-8 mr-3" />
-                <h3 className="text-xl font-bold">Partición {index + 1}: {partition.name}</h3>
+                <h3 className="text-xl font-bold">
+                  Partición {index + 1}: {partition.name}
+                </h3>
               </div>
             ))
           ) : (
-            <p className="text-gray-500">No se encontraron particiones.</p>
+            !loading && <p className="text-gray-500">No se encontraron particiones.</p>
           )}
         </div>
       </div>
