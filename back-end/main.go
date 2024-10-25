@@ -76,13 +76,12 @@ func main() {
 		})
 	})
 
-	app.Post("/api/disk", func(c *fiber.Ctx) error {
-		// Estructura para recibir el JSON
+	// Endpoint para obtener las particiones de un disco
+	app.Post("/api/disk/partitions", func(c *fiber.Ctx) error {
 		type DiskRequest struct {
 			Path string `json:"path"`
 		}
 
-		// Parsear el cuerpo de la solicitud
 		var req DiskRequest
 		if err := c.BodyParser(&req); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -90,27 +89,90 @@ func main() {
 			})
 		}
 
-		// Verificar que se proporcionó una ruta válida
 		if req.Path == "" {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Debe proporcionar una ruta válida al archivo binario",
+				"error": "Debe proporcionar una ruta válida al archivo de disco",
 			})
 		}
 
-		// Crear una instancia del comando de disco
-		diskCommand := commands.NewDiskCommand()
-
-		// Ejecutar el comando para mostrar el disco
-		result, err := diskCommand.ShowDisk(req.Path)
+		// Cargar el disco usando DiskManager
+		err := diskManager.LoadDisk(req.Path)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": fmt.Sprintf("Error al mostrar el disco: %v", err),
+				"error": fmt.Sprintf("Error al cargar el disco: %v", err),
 			})
 		}
 
-		// Retornar la salida del comando
+		// Obtener el MBR del disco cargado
+		mbr, exists := diskManager.PartitionMBRs[req.Path]
+		if !exists {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "No se encontró el MBR para el disco proporcionado",
+			})
+		}
+
+		// Obtener la lista de particiones usando ListPartitions
+		partitions := mbr.ListPartitions()
+
 		return c.JSON(fiber.Map{
-			"result": result,
+			"partitions": partitions,
+		})
+	})
+
+	app.Post("/api/disk/partition/tree", func(c *fiber.Ctx) error {
+		// Estructura para recibir el JSON
+		type PartitionRequest struct {
+			DiskPath      string `json:"diskPath"`
+			PartitionName string `json:"partitionName"`
+		}
+
+		// Parsear el cuerpo de la solicitud
+		var req PartitionRequest
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Formato JSON inválido",
+			})
+		}
+
+		// Verificar que se proporcionó la ruta del disco y el nombre de la partición
+		if req.DiskPath == "" || req.PartitionName == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Debe proporcionar 'diskPath' y 'partitionName'",
+			})
+		}
+
+		// Verificar si el archivo existe
+		_, err := os.Stat(req.DiskPath)
+		if os.IsNotExist(err) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "El archivo especificado no existe",
+			})
+		} else if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": fmt.Sprintf("Error al verificar el archivo: %v", err),
+			})
+		}
+
+		// Crear una nueva instancia de DirectoryTreeService
+		treeService, err := commands.NewDirectoryTreeService()
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": fmt.Sprintf("Error al inicializar el servicio del árbol de directorios: %v", err),
+			})
+		}
+		defer treeService.Close()
+
+		// Obtener el árbol de directorios de la partición
+		tree, err := treeService.GetDirectoryTree("/")
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": fmt.Sprintf("Error al obtener el árbol de directorios: %v", err),
+			})
+		}
+
+		// Devolver el árbol en formato JSON
+		return c.JSON(fiber.Map{
+			"tree": tree,
 		})
 	})
 
