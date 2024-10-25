@@ -94,6 +94,10 @@ var mapCommands = map[string]func([]string) (string, error){ // Cambiamos a (str
 		result, err := commands.ParserFind(args)
 		return fmt.Sprintf("%v", result), err
 	},
+	"remove": func(args []string) (string, error) {
+		result, err := commands.ParserRemove(args)
+		return fmt.Sprintf("%v", result), err
+	},
 	"help": help,
 }
 
