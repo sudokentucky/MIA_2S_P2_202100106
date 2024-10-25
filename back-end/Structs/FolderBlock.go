@@ -43,10 +43,10 @@ func NewFolderBlock(selfInodo, parentInodo int32, additionalContents map[string]
 	fb := &FolderBlock{}
 
 	// Asignar los primeros dos contenidos: . y ..
-	copy(fb.B_content[0].B_name[:], ".")
+	copy(fb.B_content[0].B_name[:], ".") //A sí mismo
 	fb.B_content[0].B_inodo = selfInodo
 
-	copy(fb.B_content[1].B_name[:], "..")
+	copy(fb.B_content[1].B_name[:], "..") //Padre
 	fb.B_content[1].B_inodo = parentInodo
 
 	// Asignar contenidos adicionales a partir del índice 2.
