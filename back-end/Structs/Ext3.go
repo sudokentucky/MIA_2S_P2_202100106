@@ -49,10 +49,10 @@ func (sb *Superblock) CreateUsersFileExt3(file *os.File, journaling_start int64)
 	// Creamos el bloque del Inodo Raíz
 	rootBlock := &FolderBlock{
 		B_content: [4]FolderContent{
-			{B_name: [12]byte{'.'}, B_inodo: 0},      // El inodo raíz siempre es 0
-			{B_name: [12]byte{'.', '.'}, B_inodo: 0}, // El inodo padre también es 0
-			{B_name: [12]byte{'-'}, B_inodo: -1},     // Bloque vacío
-			{B_name: [12]byte{'-'}, B_inodo: -1},     // Bloque vacío
+			{B_name: [12]byte{'.'}, B_inodo: 0},                                                         // El inodo raíz siempre es 0
+			{B_name: [12]byte{'.', '.'}, B_inodo: 0},                                                    // El inodo padre también es 0
+			{B_name: [12]byte{'u', 's', 'e', 'r', 's', '.', 't', 'x', 't'}, B_inodo: sb.S_inodes_count}, // Apunta a users.txt
+			{B_name: [12]byte{'-'}, B_inodo: -1},                                                        // Bloque vacío
 		},
 	}
 
@@ -134,18 +134,6 @@ func (sb *Superblock) CreateUsersFileExt3(file *os.File, journaling_start int64)
 	err = sb.UpdateBitmapBlock(file, usersBlockIndex, true)
 	if err != nil {
 		return fmt.Errorf("error actualizando el bitmap de bloques para /users.txt: %w", err)
-	}
-
-	// Actualizar el bloque del inodo raíz para apuntar a /users.txt
-	rootBlock.B_content[2] = FolderContent{
-		B_name:  [12]byte{'u', 's', 'e', 'r', 's', '.', 't', 'x', 't'}, // Nombre del archivo
-		B_inodo: sb.S_inodes_count,                                     // Inodo donde se encuentra /users.txt
-	}
-
-	// Serializar nuevamente el bloque raíz actualizado
-	err = rootBlock.Encode(file, int64(sb.S_block_start+0))
-	if err != nil {
-		return fmt.Errorf("error serializando el bloque raíz actualizado: %w", err)
 	}
 
 	// Actualizamos el superbloque
