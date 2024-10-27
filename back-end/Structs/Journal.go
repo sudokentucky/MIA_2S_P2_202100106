@@ -115,6 +115,8 @@ func (journal *Journal) GenerateGraph(journalStart int64, journalCount int32, fi
 	dotContent := ""                           // Inicia el contenido del DOT
 	entrySize := int64(binary.Size(Journal{})) // Tamaño de cada entrada de Journal
 
+	fmt.Println("Generando grafo de Journal...")
+
 	for i := int32(0); i < journalCount; i++ {
 		offset := journalStart + int64(i)*entrySize
 		fmt.Printf("Leyendo entrada del Journal en offset: %d\n", offset)
