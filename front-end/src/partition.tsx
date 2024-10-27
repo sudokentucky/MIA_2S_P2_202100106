@@ -1,34 +1,39 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import partitionIcon from "/public/partition.svg";
 import { usePartitions } from "../hooks/usePartition";
+import goBackIcon from "/public/goBack.svg";
 
 const PartitionVisualizer = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const diskPath = location.state?.diskPath;
+  const diskName = location.state?.diskName; // Obtener el nombre del disco
 
   const { partitions, loading, error } = usePartitions(diskPath);
 
   const goBack = () => {
-    navigate("/");
+    navigate("/file-visualizer");
   };
 
   const handleViewPartitionTree = (partitionName: string) => {
-    navigate("/partition-tree", { state: { diskPath, partitionName } }); // Pasamos diskPath y partitionName
+    navigate("/partition-tree", {
+      state: { diskPath, partitionName } 
+    });
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
       <div className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold mb-6">Particiones del Disco: {diskPath}</h1>
+        <h1 className="text-3xl font-bold mb-6">Particiones del Disco: {diskName}</h1> {/* Mostrar diskName */}
 
         <div className="mb-4">
           <button
             onClick={goBack}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            className="mb-4 flex items-center text-blue-600 hover:text-blue-800"
           >
-            Regresar a los Discos
+            <img src={goBackIcon} alt="Regresar" className="w-4 h-4 mr-2" />
+            Regresar a los discos
           </button>
         </div>
 
@@ -43,7 +48,7 @@ const PartitionVisualizer = () => {
               <div
                 key={index}
                 className="flex items-center mb-4 cursor-pointer"
-                onClick={() => handleViewPartitionTree(partition.name)} // Manejamos el clic en la partición
+                onClick={() => handleViewPartitionTree(partition.name)}
               >
                 <img src={partitionIcon} alt="Partición" className="w-8 h-8 mr-3" />
                 <h3 className="text-xl font-bold">
