@@ -1,104 +1,131 @@
-import { useState, useEffect } from "react";
-import { useLogin } from "../hooks/useLogin"; // Hook personalizado para manejar la solicitud de login
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Message from "./Message"; // Importar el componente Message para mostrar mensajes
-import { useAuth } from "../hooks/useAuth"; // Importar el hook useAuth para manejar el estado de autenticación
+import { useLogin } from "../hooks/useLogin";
+import { useAuth } from "../hooks/useAuth";
+import Message from "./Message";
 
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [userId, setUserId] = useState(""); // ID del usuario
-  const [error, setError] = useState<string | null>(null); // Estado para errores en el frontend
-  const { login, loading, backendMessage, messageType } = useLogin(); // Usa el hook personalizado
-  const { Login } = useAuth(); // Traemos la función Login de Zustand para actualizar el estado global
+  const [userId, setUserId] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const { login, loading, backendMessage, messageType } = useLogin();
+  const { Login } = useAuth();
   const navigate = useNavigate();
 
-
-  // Manejar el envío del formulario de login
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validar si los campos están vacíos antes de llamar a login
     if (!username || !password || !userId) {
-      setError("Todos los campos son obligatorios: ID de usuario, nombre de usuario y contraseña."); // Mostrar mensaje de error
+      setError("Todos los campos son obligatorios: ID de usuario, nombre de usuario y contraseña.");
       return;
     }
-
-    // Si los campos están completos, se procede con el login
-    setError(null); // Limpiar cualquier error anterior
+    setError(null);
     login(username, password, userId).then((result) => {
       if (result === "success") {
-        Login(); // Actualizamos el estado de auth en Zustand cuando el login es exitoso
-        navigate("/user-management"); // Redirigir a la gestión de usuarios
+        Login();
+        navigate("/user-management");
       }
     });
   };
 
-
   return (
-    <div className="flex justify-center items-center min-h-screen">
-      <div className="w-full max-w-sm p-6 bg-nosferatu-900 text-light-50 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold mb-6 text-center text-dracula-500">Iniciar Sesión</h1>
+    <div className="min-h-screenpy-6 flex flex-col justify-center sm:py-12">
+      <div className="relative py-3 sm:max-w-xl sm:mx-auto">
+        <div className="absolute inset-0 bg-gradient-to-r from-dracula-500 to-marcelin-400 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl"></div>
         
-        <form onSubmit={handleLogin}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-light-200 mb-2">ID del Usuario</label>
-            <input
-              type="text"
-              className="w-full p-2 border border-nosferatu-700 rounded-md focus:outline-none focus:ring-2 focus:ring-dracula-300 focus:border-dracula-500 bg-nosferatu-800 text-light-50"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              placeholder="Ingrese su ID"
-            />
+        <div className="relative px-4 py-10 bg-nosferatu-700 shadow-lg sm:rounded-3xl sm:p-20">
+          <div className="max-w-md mx-auto">
+            <h1 className="text-2xl font-semibold text-center mb-6 text-light-50">Iniciar Sesión</h1>
+
+            <form onSubmit={handleLogin} className="space-y-6">
+              {/* Campo de ID de usuario */}
+              <div className="relative">
+                <input
+                  type="text"
+                  id="userId"
+                  name="userId"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  placeholder="ID de Usuario"
+                  className="peer placeholder-transparent h-10 w-full border-b-2 border-light-200 bg-nosferatu-700 text-light-50 focus:outline-none focus:border-dracula-500"
+                  autoComplete="off"
+                />
+                <label
+                  htmlFor="userId"
+                  className="absolute left-0 -top-3.5 text-light-200 text-sm peer-placeholder-shown:top-2 peer-placeholder-shown:text-light-400 peer-placeholder-shown:text-base transition-all peer-focus:-top-3.5 peer-focus:text-dracula-500 peer-focus:text-sm"
+                >
+                  ID de Usuario
+                </label>
+              </div>
+
+              {/* Campo de Nombre de Usuario */}
+              <div className="relative">
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Nombre de Usuario"
+                  className="peer placeholder-transparent h-10 w-full border-b-2 border-light-200 bg-nosferatu-700 text-light-50 focus:outline-none focus:border-dracula-500"
+                  autoComplete="off"
+                />
+                <label
+                  htmlFor="username"
+                  className="absolute left-0 -top-3.5 text-light-200 text-sm peer-placeholder-shown:top-2 peer-placeholder-shown:text-light-400 peer-placeholder-shown:text-base transition-all peer-focus:-top-3.5 peer-focus:text-dracula-500 peer-focus:text-sm"
+                >
+                  Nombre de Usuario
+                </label>
+              </div>
+
+              {/* Campo de Contraseña */}
+              <div className="relative">
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Contraseña"
+                  className="peer placeholder-transparent h-10 w-full border-b-2 border-light-200 bg-nosferatu-700 text-light-50 focus:outline-none focus:border-dracula-500"
+                  autoComplete="off"
+                />
+                <label
+                  htmlFor="password"
+                  className="absolute left-0 -top-3.5 text-light-200 text-sm peer-placeholder-shown:top-2 peer-placeholder-shown:text-light-400 peer-placeholder-shown:text-base transition-all peer-focus:-top-3.5 peer-focus:text-dracula-500 peer-focus:text-sm"
+                >
+                  Contraseña
+                </label>
+              </div>
+
+              {/* Mostrar error */}
+              {error && <div className="text-center text-marcelin-400">{error}</div>}
+              {loading && <div className="text-center text-dracula-500">Iniciando sesión...</div>}
+              
+              {/* Mensaje del backend */}
+              <Message text={backendMessage ?? ""} type={messageType} />
+
+              {/* Botón de envío */}
+              <button
+                type="submit"
+                className={`w-full bg-gradient-to-r from-dracula-500 to-marcelin-500 text-white py-2 rounded-md shadow-md hover:bg-gradient-to-l transition-all ${
+                  loading ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                disabled={loading}
+              >
+                Iniciar Sesión
+              </button>
+            </form>
+
+            {/* Botón Regresar */}
+            <button
+              onClick={() => navigate("/")}
+              className="mt-4 w-full flex items-center justify-center bg-nosferatu-800 border border-nosferatu-700 rounded-md shadow-md py-2 text-sm font-medium text-light-50 hover:bg-nosferatu-700 focus:outline-none"
+            >
+              Regresar
+            </button>
           </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-light-200 mb-2">Nombre de usuario</label>
-            <input
-              type="text"
-              className="w-full p-2 border border-nosferatu-700 rounded-md focus:outline-none focus:ring-2 focus:ring-dracula-300 focus:border-dracula-500 bg-nosferatu-800 text-light-50"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Ingrese su usuario"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-light-200 mb-2">Contraseña</label>
-            <input
-              type="password"
-              className="w-full p-2 border border-nosferatu-700 rounded-md focus:outline-none focus:ring-2 focus:ring-dracula-300 focus:border-dracula-500 bg-nosferatu-800 text-light-50"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Ingrese su contraseña"
-            />
-          </div>
-
-          {/* Mostrar error si falta algún campo o si ya hay un usuario logueado */}
-          {error && <div className="text-center text-marcelin-400 mb-4">{error}</div>}
-
-          {loading && <div className="text-center text-blue-500 mb-4">Iniciando sesión...</div>}
-          
-          {/* Componente Message para mostrar mensaje del backend */}
-          <Message text={backendMessage ?? ""} type={messageType} />
-
-          <button
-            type="submit"
-            className={`w-full bg-dracula-500 text-white p-2 rounded-md hover:bg-dracula-600 transition-all shadow-lg ${
-              loading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-            disabled={loading}
-          >
-            Iniciar Sesión
-          </button>
-        </form>
-
-        <button
-          onClick={() => navigate("/")}
-          className="w-full mt-4 bg-nosferatu-700 text-light-50 p-2 rounded-md hover:bg-nosferatu-800 transition-all shadow-md"
-        >
-          Regresar
-        </button>
+        </div>
       </div>
     </div>
   );
