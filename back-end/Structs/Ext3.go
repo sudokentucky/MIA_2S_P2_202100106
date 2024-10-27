@@ -22,11 +22,6 @@ func (sb *Superblock) CreateUsersFileExt3(file *os.File, journaling_start int64)
 	if err != nil {
 		return fmt.Errorf("error al guardar la entrada de la raíz en el journal: %w", err)
 	}
-	//Codificar el journal
-	err = rootJournal.Encode(file, journaling_start)
-	if err != nil {
-		return fmt.Errorf("error al codificar el journal: %w", err)
-	}
 
 	// Encontrar el primer bloque libre para la raíz
 	rootBlockIndex, err := sb.FindNextFreeBlock(file)
@@ -98,11 +93,6 @@ func (sb *Superblock) CreateUsersFileExt3(file *os.File, journaling_start int64)
 		return fmt.Errorf("error al guardar la entrada del archivo /users.txt en el journal: %w", err)
 	}
 
-	//Codificar el journal
-	err = FileJournal.Encode(file, journaling_start)
-	if err != nil {
-		return fmt.Errorf("error al codificar el journal: %w", err)
-	}
 	// Encontrar el primer bloque libre para /users.txt
 	usersBlockIndex, err := sb.FindNextFreeBlock(file)
 	if err != nil {
@@ -135,7 +125,7 @@ func (sb *Superblock) CreateUsersFileExt3(file *os.File, journaling_start int64)
 
 	// Serializar el bloque de users.txt
 	//s_first_blo es el primer bloque de datos + el tamaño del inodo de users.txt = el inicio del bloque de users.txt
-	err = usersBlock.Encode(file, int64(sb.S_first_blo+usersInode.I_size))
+	err = usersBlock.Encode(file, int64(sb.S_first_blo))
 	if err != nil {
 		return fmt.Errorf("error serializando el bloque de /users.txt: %w", err)
 	}
@@ -149,11 +139,11 @@ func (sb *Superblock) CreateUsersFileExt3(file *os.File, journaling_start int64)
 	// Actualizar el bloque del inodo raíz para apuntar a /users.txt
 	rootBlock.B_content[2] = FolderContent{
 		B_name:  [12]byte{'u', 's', 'e', 'r', 's', '.', 't', 'x', 't'}, // Nombre del archivo
-		B_inodo: 1,                                                     // Inodo donde se encuentra /users.txt
+		B_inodo: sb.S_inodes_count,                                     // Inodo donde se encuentra /users.txt
 	}
 
 	// Serializar nuevamente el bloque raíz actualizado
-	err = rootBlock.Encode(file, int64(sb.S_block_start+rootBlockIndex))
+	err = rootBlock.Encode(file, int64(sb.S_block_start+0))
 	if err != nil {
 		return fmt.Errorf("error serializando el bloque raíz actualizado: %w", err)
 	}
