@@ -3,6 +3,7 @@ package commands
 import (
 	structures "backend/Structs"
 	global "backend/globals"
+	"backend/utils"
 	"bytes"
 	"encoding/binary"
 	"errors"
@@ -131,9 +132,9 @@ func commandMkfs(mkfs *MKFS, outputBuffer *bytes.Buffer) error {
 	fmt.Fprintln(outputBuffer, "Archivo users.txt creado correctamente.")
 
 	// Serializar el superbloque
-	err = superBlock.Encode(file, int64(mountedPartition.Part_start))
+	err = utils.WriteToFile(file, int64(mountedPartition.Part_start), superBlock)
 	if err != nil {
-		return fmt.Errorf("error al escribir el superbloque en la partición: %v", err)
+		return fmt.Errorf("error escribiendo el superbloque en el disco: %v", err)
 	}
 	fmt.Fprintln(outputBuffer, "Superbloque escrito correctamente en el disco.")
 	fmt.Fprintln(outputBuffer, "===========================================================")
