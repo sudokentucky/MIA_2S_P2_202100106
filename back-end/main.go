@@ -17,7 +17,6 @@ import (
 )
 
 var diskManager = commands.NewDiskManager() // Crear una nueva instancia de DiskManager
-
 func main() {
 	// Crear una nueva instancia de Fiber
 	app := fiber.New()
