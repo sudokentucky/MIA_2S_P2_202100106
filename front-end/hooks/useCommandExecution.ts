@@ -26,7 +26,8 @@ function useCommandExecution() {
 
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:3000/analyze", {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/analyze`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -35,7 +36,7 @@ function useCommandExecution() {
       });
 
       if (!response.ok) {
-        throw new Error("Error en la red o en la respuesta del servidor");
+        throw new Error("Error en la red o en la respuesta del servidor "+ apiUrl);
       }
 
       const data = await response.json();

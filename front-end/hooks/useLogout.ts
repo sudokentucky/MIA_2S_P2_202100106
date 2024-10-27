@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth"; // Importamos el hook de Zustand para manejar el estado de autenticación
+import { useDisksStore } from "../hooks/useDiskStore"; // Importamos el hook para manejar el estado de los discos
 
 export const useLogout = () => {
   const [loading, setLoading] = useState(false); // Estado para controlar si se está realizando el logout
   const [backendMessage, setBackendMessage] = useState<string | null>(null); // Mensaje devuelto por el backend
   const [messageType, setMessageType] = useState<"success" | "error" | "info" | "">(""); // Tipo de mensaje
   const { Logout } = useAuth(); // Traemos la función Logout de Zustand para actualizar el estado global
+  const { clearDisks } = useDisksStore(); // Traemos la función clearDisks de Zustand para limpiar la lista de discos
 
   const logout = async () => {
     setLoading(true);
@@ -14,7 +16,8 @@ export const useLogout = () => {
 
     try {
       // Realizar la solicitud al backend para enviar el comando logout
-      const response = await fetch("http://localhost:3000/analyze", {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/analyze`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -29,6 +32,7 @@ export const useLogout = () => {
         setBackendMessage(data.results[0]);
         setMessageType("success");
         Logout(); // Actualizamos el estado de autenticación en Zustand (cambia isLogged a false)
+        clearDisks(); // Limpiar la lista de discos al cerrar sesión
       } else {
         // Mostrar un mensaje de error si no se recibe respuesta adecuada
         setBackendMessage("Error: No se pudo cerrar la sesión.");

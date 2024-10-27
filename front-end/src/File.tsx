@@ -1,5 +1,5 @@
 import React from "react";
-import fileIcon from "/public/file-flat.svg";
+import fileIcon from "../src/assets/file-flat.svg"; // Importa el icono de archivo
 
 interface FileProps {
   name: string;

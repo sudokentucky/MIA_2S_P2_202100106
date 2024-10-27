@@ -11,8 +11,10 @@ export const useLogin = () => {
     setMessageType(""); // Reiniciar el tipo de mensaje
 
     try {
+
       // Realizar la solicitud al endpoint de login
-      const response = await fetch("http://localhost:3000/users/login", {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/users/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

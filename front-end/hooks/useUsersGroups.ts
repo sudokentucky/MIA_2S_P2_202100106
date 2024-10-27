@@ -11,7 +11,8 @@ function useUsersGroups() {
   const fetchUsersGroups = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:3000/list-users-groups");
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/list-users-groups`);
       if (!response.ok) {
         throw new Error("Error al obtener la lista de usuarios y grupos");
       }

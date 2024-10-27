@@ -26,7 +26,8 @@ export const usePartitions = (diskPath: string) => {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:3000/api/disk/partitions", {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/api/disk/partitions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

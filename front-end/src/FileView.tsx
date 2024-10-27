@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Folder from "./Folder";
 import File from "./File";
 import { usePartitionTree } from "../hooks/usePartitionTree";
-import goBackIcon from "/public/goBack.svg"; // Importa el icono de retroceso
+import goBackIcon from "../src/assets/goBack.svg"; // Importa el icono de retroceso
 
 const FileSystemTree: React.FC = () => {
   const location = useLocation();
@@ -127,7 +127,7 @@ const FileSystemTree: React.FC = () => {
                 >
                   <path d="M19.707 9.293l-2-2-7-7a1 1 0 00-1.414 0l-7 7-2 2a1 1 0 001.414 1.414L2 10.414V18a2 2 0 002 2h3a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3a2 2 0 002-2v-7.586l.293.293a1 1 0 001.414-1.414z" />
                 </svg>
-                Home
+                /
               </span>
             </li>
 

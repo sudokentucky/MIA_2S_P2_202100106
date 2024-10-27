@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDisks } from "../hooks/useDisks";
-import diskIcon from "/public/disk.svg";
+import { useDisksStore } from "../hooks/useDiskStore"; // Asegúrate de ajustar la ruta correcta
+import diskIcon from "../src/assets/disk.svg";
 
 function DiskVisualizer() {
-  const { disks, loading, error, addDisk, addDisksFromFolder } = useDisks();
+  const { disks, loading, error, addDisk, addDisksFromFolder } = useDisksStore();
   const [filePath, setFilePath] = useState<string>("");
   const navigate = useNavigate();
 
@@ -19,7 +19,10 @@ function DiskVisualizer() {
     const files = e.target.files;
     if (!files) return;
 
+    // Mapea los archivos para obtener sus rutas relativas.
     const filePaths = Array.from(files).map((file) => file.webkitRelativePath || file.name);
+
+    // Asegúrate de que las rutas sean consistentes al enviarlas a addDisksFromFolder.
     addDisksFromFolder(filePaths);
   };
 
@@ -28,8 +31,8 @@ function DiskVisualizer() {
     navigate(`/partitions/${diskIndex}`, {
       state: {
         diskPath: selectedDisk.filePath,
-        diskName: selectedDisk.fileName // Pasamos también el nombre del archivo
-      }
+        diskName: selectedDisk.fileName,
+      },
     });
   };
 

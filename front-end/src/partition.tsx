@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import partitionIcon from "/public/partition.svg";
+import partitionIcon from "../src/assets/partition.svg";
 import { usePartitions } from "../hooks/usePartition";
-import goBackIcon from "/public/goBack.svg";
+import goBackIcon from "../src/assets/goBack.svg";
 
 const PartitionVisualizer = () => {
   const navigate = useNavigate();

@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 
 interface BreadcrumbProps {
   pathSegments: string[];
@@ -7,7 +6,6 @@ interface BreadcrumbProps {
 }
 
 const Breadcrumb: React.FC<BreadcrumbProps> = ({ pathSegments, onBreadcrumbClick }) => {
-  const navigate = useNavigate();
 
   return (
     <nav className="flex" aria-label="Breadcrumb">

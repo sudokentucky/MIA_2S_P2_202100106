@@ -1,5 +1,5 @@
 import React from "react";
-import folderIcon from "/public/folder-flat.svg";
+import folderIcon from "../src/assets/folder-flat.svg"; // Importa el icono de carpeta
 
 interface FolderProps {
   name: string;
