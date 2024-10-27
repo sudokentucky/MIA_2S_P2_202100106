@@ -1,5 +1,5 @@
 # Etapa 1: Construcción del binario
-FROM golang:1.21-alpine AS build
+FROM golang:1.22.7-alpine AS build
 
 # Crear directorio de trabajo
 WORKDIR /app
