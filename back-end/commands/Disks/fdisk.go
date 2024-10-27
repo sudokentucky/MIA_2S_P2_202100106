@@ -399,10 +399,18 @@ func createLogicalPartition(file *os.File, fdisk *Fdisk, sizeBytes int, outputBu
 		return fmt.Errorf("error al deserializar el MBR: %v", err)
 	}
 
-	// Verificar si existe una partición extendida
-	extendedPartition, _ := mbr.GetPartitionByName(fdisk.name)
-	if extendedPartition == nil || extendedPartition.Part_type[0] != 'E' {
+	// Verificar si existe una partición extendida utilizando HasExtendedPartition
+	if !mbr.HasExtendedPartition() {
 		return errors.New("no se encontró una partición extendida en el disco")
+	}
+
+	// Identificar la partición extendida específica
+	var extendedPartition *structures.Partition
+	for i := range mbr.MbrPartitions {
+		if mbr.MbrPartitions[i].Part_type[0] == 'E' {
+			extendedPartition = &mbr.MbrPartitions[i]
+			break
+		}
 	}
 
 	// Buscar el último EBR en la partición extendida
