@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/BreadCrumb.tsx","./src/CommandExecution.tsx","./src/DiskVisualizer.tsx","./src/File.tsx","./src/FileInput.tsx","./src/FileView.tsx","./src/Folder.tsx","./src/Login.tsx","./src/Message.tsx","./src/NavBar.tsx","./src/UserManagement.tsx","./src/main.tsx","./src/partition.tsx","./src/vite-env.d.ts"],"version":"5.6.3"}
