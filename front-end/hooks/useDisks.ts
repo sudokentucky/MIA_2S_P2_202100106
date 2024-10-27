@@ -2,20 +2,30 @@
 import { useState } from "react";
 
 export const useDisks = () => {
-  const [disks, setDisks] = useState<{ fileName: string }[]>([]); // Solo almacenamos el fileName
-  const [loading] = useState(false);
+  const [disks, setDisks] = useState<{ fileName: string; filePath: string }[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const addDisk = (filePath: string) => {
-    // Verificar si el disco ya está en la lista para evitar duplicados
-    if (disks.some((disk) => disk.fileName === filePath)) {
+    const fileName = filePath.split("/").pop() || filePath;
+    if (disks.some((disk) => disk.filePath === filePath)) {
       setError("El disco ya ha sido agregado.");
       return;
     }
-
-    // Agregar el disco a la lista
-    setDisks((prevDisks) => [...prevDisks, { fileName: filePath }]);
+    setDisks((prevDisks) => [...prevDisks, { fileName, filePath }]);
   };
 
-  return { disks, loading, error, addDisk };
+  const addDisksFromFolder = (filePaths: string[]) => {
+    setLoading(true);
+    const newDisks = filePaths
+      .filter((filePath) => !disks.some((disk) => disk.filePath === filePath))
+      .map((filePath) => {
+        const fileName = filePath.split("/").pop() || filePath;
+        return { fileName, filePath };
+      });
+    setDisks((prevDisks) => [...prevDisks, ...newDisks]);
+    setLoading(false);
+  };
+
+  return { disks, loading, error, addDisk, addDisksFromFolder };
 };
