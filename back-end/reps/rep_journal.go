@@ -13,7 +13,7 @@ import (
 func ReportJournal(superblock *structs.Superblock, diskPath string, path string) error {
 	// Calcular el inicio del Journal solo si es EXT3
 	var journalStart int64
-	var superblockSize int64 = int64(binary.Size(superblock))
+	var superblockSize int64 = int64(superblock.S_block_start) + int64(binary.Size(superblock))
 	if superblock.S_filesystem_type == 3 {
 		journalStart = superblockSize
 	} else {
@@ -38,7 +38,7 @@ func ReportJournal(superblock *structs.Superblock, diskPath string, path string)
 
 	// Crear una instancia de Journal
 	journal := &structs.Journal{}
-
+	journal.Print()
 	// Iniciar el contenido DOT
 	dotContent := initJournalDotGraph()
 
