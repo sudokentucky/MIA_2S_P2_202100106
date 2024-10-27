@@ -70,6 +70,7 @@ func initDotGraphForSuperblock(superblock *structs.Superblock) string {
 			superblockTable [label=<
 				<table border="0" cellborder="1" cellspacing="0" cellpadding="10" bgcolor="#FFF9C4" style="rounded">
 					<tr><td colspan="2" bgcolor="#4CAF50" align="center"><b>REPORTE DEL SUPERBLOQUE</b></td></tr>
+					<tr><td><b>Tipo de Sistema</b></td><td>%d</td></tr>
 					<tr><td><b>Cantidad de Inodos</b></td><td>%d</td></tr>
 					<tr><td><b>Cantidad de Bloques</b></td><td>%d</td></tr>
 					<tr><td><b>Inodos Libres</b></td><td>%d</td></tr>
@@ -80,14 +81,19 @@ func initDotGraphForSuperblock(superblock *structs.Superblock) string {
 					<tr><td><b>Primer Bloque Libre</b></td><td>%d</td></tr>
 					<tr><td><b>Inicio Bitmap de Inodos</b></td><td>%d</td></tr>
 					<tr><td><b>Inicio Bitmap de Bloques</b></td><td>%d</td></tr>
+					<tr><td><b>Inicio de Tabla de Inodos</b></td><td>%d</td></tr>
+					<tr><td><b>Inicio de Tabla de Bloques</b></td><td>%d</td></tr>
 					<tr><td><b>Última Modificación</b></td><td>%s</td></tr>
 					<tr><td><b>Último Montaje</b></td><td>%s</td></tr>
+					<tr><td><b>Número de Montajes</b></td><td>%d</td></tr>
+					<tr><td><b>Valor Mágico</b></td><td>0x%x</td></tr>
 				</table>>];
 		}
 	`
 
 	// Formatear el contenido con los datos del superbloque
 	dotContent = fmt.Sprintf(dotContent,
+		superblock.S_filesystem_type,
 		superblock.S_inodes_count,
 		superblock.S_blocks_count,
 		superblock.S_free_inodes_count,
@@ -98,8 +104,12 @@ func initDotGraphForSuperblock(superblock *structs.Superblock) string {
 		superblock.S_first_blo,
 		superblock.S_bm_inode_start,
 		superblock.S_bm_block_start,
+		superblock.S_inode_start,
+		superblock.S_block_start,
 		mtime,
 		umtime,
+		superblock.S_mnt_count,
+		superblock.S_magic,
 	)
 
 	return dotContent
