@@ -28,14 +28,19 @@ const FileSystemTree: React.FC = () => {
   }
 
   // Obtener los segmentos del path actual
-  const pathSegments = currentPath.split("/").filter(Boolean); // Segmentar el path actual
+  const pathSegments = currentPath.split("/").filter(Boolean);
+
+  // Función para regresar a la vista de particiones
+  const handleReturnToPartitions = () => {
+    navigate("/file-visualizer"); // Cambia a la ruta de particiones
+  };
 
   // Función para navegar dentro de una carpeta
   const handleFolderClick = (folderName: string) => {
     setCurrentPath((prevPath) =>
       prevPath === "/" ? `/${folderName}` : `${prevPath}/${folderName}`
     );
-    setFileContent(null); // Limpiar el contenido del archivo al cambiar de directorio
+    setFileContent(null);
   };
 
   // Función para obtener el contenido del archivo al hacer doble clic
@@ -55,7 +60,7 @@ const FileSystemTree: React.FC = () => {
       }
 
       const data = await response.json();
-      setFileContent(data.results.join("\n")); // Mostrar el contenido del archivo
+      setFileContent(data.results.join("\n"));
     } catch (err) {
       console.error(err);
       setFileContent("Error al obtener el contenido del archivo.");
@@ -66,13 +71,6 @@ const FileSystemTree: React.FC = () => {
   const handleBreadcrumbClick = (index: number) => {
     const newPath = "/" + pathSegments.slice(0, index + 1).join("/");
     setCurrentPath(newPath);
-    setFileContent(null); // Limpiar el contenido del archivo al cambiar el directorio
-  };
-
-  // Función para regresar al directorio anterior
-  const handleBackClick = () => {
-    const parentPath = currentPath.split("/").slice(0, -1).join("/") || "/";
-    setCurrentPath(parentPath);
     setFileContent(null);
   };
 
@@ -88,6 +86,15 @@ const FileSystemTree: React.FC = () => {
   return (
     <div className="flex-grow flex flex-col items-center justify-center p-6 bg-gray-100">
       <div className="w-full max-w-5xl bg-white rounded-lg shadow-lg p-8">
+        {/* Botón de Regresar a Particiones */}
+        <button
+          onClick={handleReturnToPartitions}
+          className="mb-4 flex items-center text-blue-600 hover:text-blue-800"
+        >
+          <img src={goBackIcon} alt="Regresar" className="w-4 h-4 mr-2" />
+          Regresar a los discos
+        </button>
+
         {/* Título Principal */}
         <h1 className="text-4xl font-bold mb-6 text-center text-gray-900">
           Explorador de Archivos <span className="text-blue-600">Ext2 | Ext3</span>
