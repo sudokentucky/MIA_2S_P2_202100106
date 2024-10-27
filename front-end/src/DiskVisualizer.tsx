@@ -4,7 +4,7 @@ import { useDisks } from "../hooks/useDisks";
 import diskIcon from "/public/disk.svg";
 
 function DiskVisualizer() {
-  const { disks, loading, error, addDisk } = useDisks();
+  const { disks, loading, error, addDisk, addDisksFromFolder } = useDisks();
   const [filePath, setFilePath] = useState<string>("");
   const navigate = useNavigate();
 
@@ -15,9 +15,22 @@ function DiskVisualizer() {
     }
   };
 
+  const handleFolderSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const filePaths = Array.from(files).map((file) => file.webkitRelativePath || file.name);
+    addDisksFromFolder(filePaths);
+  };
+
   const handleViewPartitions = (diskIndex: number) => {
     const selectedDisk = disks[diskIndex];
-    navigate(`/partitions/${diskIndex}`, { state: { diskPath: selectedDisk.fileName } });
+    navigate(`/partitions/${diskIndex}`, {
+      state: {
+        diskPath: selectedDisk.filePath,
+        diskName: selectedDisk.fileName // Pasamos también el nombre del archivo
+      }
+    });
   };
 
   return (
@@ -50,6 +63,19 @@ function DiskVisualizer() {
           {loading ? "Cargando..." : "Agregar Disco"}
         </button>
 
+        <div className="my-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2">
+            O seleccionar una carpeta completa:
+          </label>
+          <input
+            type="file"
+            multiple
+            onChange={handleFolderSelect}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            {...{ webkitdirectory: "true" } as any}
+          />
+        </div>
+
         <div className="mt-8">
           <h2 className="text-2xl font-bold mb-4">Discos</h2>
 
@@ -62,9 +88,10 @@ function DiskVisualizer() {
               >
                 <div className="flex items-center">
                   <img src={diskIcon} alt="Disco" className="w-8 h-8 mr-3" />
-                  <h3 className="text-xl font-bold">
-                    Disco {index + 1}: {disk.fileName}
-                  </h3>
+                  <div>
+                    <h3 className="text-xl font-bold">Disco {index + 1}: {disk.fileName}</h3>
+                    <p className="text-gray-600 text-sm">{disk.filePath}</p>
+                  </div>
                 </div>
               </div>
             ))
