@@ -4,6 +4,7 @@ import useLineCounter from "../hooks/useLineCounter";
 import FileInput from "./FileInput";
 import Message from "./Message";
 
+
 // Definir el tipo de las props que recibe CommandExecution
 interface CommandExecutionProps {
   updateNavbar: () => void;  // Tipar correctamente updateNavbar como una función
