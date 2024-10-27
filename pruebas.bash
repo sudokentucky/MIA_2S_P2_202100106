@@ -1,5 +1,15 @@
 # Crear un disco de 500 MB
 mkdisk -size=500 -unit=M -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia 
+#crear un disco de 50 mb
+mkdisk -size=25 -unit=k -path=/home/ubuntu/Archivos/Disks/prueba1.mia
+#crear 1 particion de 20 mb
+fdisk -size=15 -unit=k -path=/home/ubuntu/Archivos/Disks/prueba1.mia -name="Particion1"
+mount -path=/home/ubuntu/Archivos/Disks/prueba1.mia -name="Particion1"
+mkfs -id=061A -type=full -fs=3fs
+/home/ubuntu/Archivos/Disks/prueba1.mia
+
+
+
 # Crear 3 particiones primarias de 50 MB cada una
 fdisk -size=50 -unit=M -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia  -name="Primaria1"
 fdisk -size=50 -unit=M -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia  -name="Primaria2"
@@ -108,3 +118,10 @@ rmdisk -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mi
 /home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia
 
 sudo docker run -p 3000:3000 go-fiber-app 
+
+
+mkdisk -size=5 -unit=M -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia 
+fdisk -size=3 -unit=M -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia  -name="Primaria1"
+mount -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia  -name="Primaria1"
+mkfs -id=061A -type=full -fs=3fs
+mkfile -r -size=128 -path="/home/usac/mia/1.txt"

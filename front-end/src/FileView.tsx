@@ -47,7 +47,8 @@ const FileSystemTree: React.FC = () => {
   const handleFileDoubleClick = async (fileName: string) => {
     try {
       const command = `cat -file1="${currentPath}/${fileName}"`;
-      const response = await fetch("http://localhost:3000/analyze", {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/analyze`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
