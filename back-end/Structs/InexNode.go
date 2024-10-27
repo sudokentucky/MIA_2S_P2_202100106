@@ -64,6 +64,12 @@ func (inode *Inode) CreateInode(
 	inode.I_type = [1]byte{inodeType}
 	inode.I_perm = permissions
 
+	//Actualizar el bitmap de inodos
+	err = sb.UpdateBitmapInode(file, inodeIndex, true)
+	if err != nil {
+		return fmt.Errorf("error actualizando el bitmap de inodos: %w", err)
+	}
+
 	// Serializar el inodo en la ubicación correcta
 	inodeOffset := int64(sb.S_inode_start + (inodeIndex * sb.S_inode_size))
 	err = inode.Encode(file, inodeOffset)
