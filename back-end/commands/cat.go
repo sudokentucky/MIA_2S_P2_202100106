@@ -55,7 +55,7 @@ func ParserCat(tokens []string) (string, error) {
 }
 
 func commandCat(cat *CAT, outputBuffer *bytes.Buffer) error {
-	fmt.Fprint(outputBuffer, "======================= CAT =======================\n")
+	//fmt.Fprint(outputBuffer, "======================= CAT =======================\n")
 	// Verificar si hay un usuario logueado
 	if !global.IsLoggedIn() {
 		return fmt.Errorf("no hay un usuario logueado")
@@ -79,7 +79,9 @@ func commandCat(cat *CAT, outputBuffer *bytes.Buffer) error {
 
 	// Leer y mostrar el contenido de cada archivo
 	for _, filePath := range cat.files {
-		fmt.Fprintf(outputBuffer, "Leyendo archivo: %s\n", filePath)
+		var pathTrim = strings.Trim(filePath, "/")
+		fmt.Fprintf(outputBuffer, "Contenido del archivo: %s\n", pathTrim)
+		fmt.Fprintln(outputBuffer, "===================================================================")
 
 		// Leer el contenido del archivo
 		content, err := readFileContent(filePath)
@@ -91,7 +93,7 @@ func commandCat(cat *CAT, outputBuffer *bytes.Buffer) error {
 		// Concatenar el contenido del archivo al buffer de salida
 		outputBuffer.WriteString(content)
 		outputBuffer.WriteString("\n") // Separar el contenido de los archivos con un salto de línea
-		fmt.Fprint(outputBuffer, "===========================================\n")
+		//fmt.Fprint(outputBuffer, "===========================================\n")
 	}
 
 	return nil
