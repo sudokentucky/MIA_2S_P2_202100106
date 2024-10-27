@@ -15,6 +15,7 @@ fdisk -size=50 -unit=M -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disk
 mount -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia  -name="Primaria2"
 mount -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia  -name="Primaria3"
 mount -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia  -name="Primaria1"
+
 mkfs -id=061A -type=full -fs=3fs
 mkfs -id=061A -type=full -fs=2fs
 
@@ -105,3 +106,5 @@ rep -id=061A -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Reps/Example_i
 rmdisk -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia 
 
 /home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia
+
+sudo docker run -p 3000:3000 go-fiber-app 
