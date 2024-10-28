@@ -226,7 +226,6 @@ func (sb *Superblock) CreateFile(file *os.File, parentsDir []string, destFile st
 	return nil
 }
 
-// deleteFileInInode elimina un archivo en un inodo específico
 func (sb *Superblock) deleteFileInInode(file *os.File, inodeIndex int32, fileName string) error {
 	// Deserializar el inodo
 	inode := &Inode{}
@@ -259,9 +258,15 @@ func (sb *Superblock) deleteFileInInode(file *os.File, inodeIndex int32, fileNam
 			if content.B_inodo != -1 && strings.EqualFold(contentName, fileName) {
 				fmt.Printf("Archivo '%s' encontrado en inodo %d, eliminando.\n", fileName, content.B_inodo)
 
+				// Eliminar la referencia al archivo en el bloque de la carpeta usando RemoveEntry
+				err := block.RemoveEntry(file, fileName, int64(sb.S_block_start+(blockIndex*sb.S_block_size)))
+				if err != nil {
+					return fmt.Errorf("error al eliminar la entrada '%s' del bloque %d: %v", fileName, blockIndex, err)
+				}
+
 				// Deserializar el inodo del archivo
 				fileInode := &Inode{}
-				err := fileInode.Decode(file, int64(sb.S_inode_start+(content.B_inodo*sb.S_inode_size)))
+				err = fileInode.Decode(file, int64(sb.S_inode_start+(content.B_inodo*sb.S_inode_size)))
 				if err != nil {
 					return fmt.Errorf("error al deserializar inodo del archivo %d: %v", content.B_inodo, err)
 				}
@@ -282,17 +287,11 @@ func (sb *Superblock) deleteFileInInode(file *os.File, inodeIndex int32, fileNam
 					return fmt.Errorf("error al liberar inodo %d: %v", content.B_inodo, err)
 				}
 
-				// Eliminar la referencia al archivo en el bloque de la carpeta
-				content.B_inodo = -1
-				copy(content.B_name[:], "")
-
-				// Serializar el bloque actualizado
-				err = block.Encode(file, int64(sb.S_block_start+(blockIndex*sb.S_block_size)))
-				if err != nil {
-					return fmt.Errorf("error al serializar bloque %d después de eliminar archivo: %v", blockIndex, err)
-				}
-
-				fmt.Printf("Archivo '%s' eliminado correctamente.\n", fileName)
+				fmt.Printf("Archivo '%s' eliminado correctamente de la carpeta.\n", fileName)
+				fmt.Println("Inodos")
+				sb.PrintInodes(file.Name())
+				fmt.Println("Bloques")
+				sb.PrintBlocks(file.Name())
 				return nil
 			}
 		}
@@ -346,5 +345,6 @@ func (sb *Superblock) DeleteFile(file *os.File, parentsDir []string, fileName st
 			}
 		}
 	}
+
 	return fmt.Errorf("archivo '%s' no encontrado en ninguna carpeta", fileName)
 }
