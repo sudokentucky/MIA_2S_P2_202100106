@@ -58,7 +58,7 @@ func commandRemove(removeCmd *REMOVE, outputBuffer *bytes.Buffer) error {
 
 	// Obtener la partición montada asociada al usuario logueado
 	idPartition := global.UsuarioActual.Id
-	_, _, partitionPath, err := global.GetMountedPartitionSuperblock(idPartition)
+	partitionSuperblock, mountedPartition, partitionPath, err := global.GetMountedPartitionSuperblock(idPartition)
 	if err != nil {
 		return fmt.Errorf("error al obtener la partición montada: %w", err)
 	}
@@ -71,9 +71,15 @@ func commandRemove(removeCmd *REMOVE, outputBuffer *bytes.Buffer) error {
 	defer file.Close() // Cerrar el archivo cuando ya no sea necesario
 
 	// Llamar a la función refactorizada para eliminar archivo/carpeta
-	err = removeFileOrDirectory(removeCmd.path, file)
+	err = removeFileOrDirectory(removeCmd.path, partitionSuperblock, file)
 	if err != nil {
 		return fmt.Errorf("error al eliminar archivo o carpeta: %v", err)
+	}
+
+	// Serializar el superbloque para guardar los cambios
+	err = partitionSuperblock.Encode(file, int64(mountedPartition.Part_start))
+	if err != nil {
+		return fmt.Errorf("error al serializar el superbloque después de la eliminación: %v", err)
 	}
 
 	fmt.Fprintf(outputBuffer, "Archivo o carpeta '%s' eliminado exitosamente.\n", removeCmd.path)
@@ -82,26 +88,19 @@ func commandRemove(removeCmd *REMOVE, outputBuffer *bytes.Buffer) error {
 }
 
 // removeFileOrDirectory elimina un archivo o carpeta dada la ruta
-func removeFileOrDirectory(path string, file *os.File) error {
-	// Obtener el Superblock y la partición montada asociada
-	idPartition := global.UsuarioActual.Id
-	partitionSuperblock, _, _, err := global.GetMountedPartitionSuperblock(idPartition)
-	if err != nil {
-		return fmt.Errorf("error al obtener la partición montada: %v", err)
-	}
-
+func removeFileOrDirectory(path string, sb *structs.Superblock, file *os.File) error {
 	// Convertir el path del archivo o carpeta en un array de carpetas
 	parentDirs, fileName := utils.GetParentDirectories(path)
 
 	// Intentar eliminar el archivo
-	err = removeFile(partitionSuperblock, file, parentDirs, fileName)
+	err := removeFile(sb, file, parentDirs, fileName)
 	if err == nil {
 		// Si el archivo se eliminó correctamente, regresar
 		return nil
 	}
 
 	// Si no es un archivo, intentar eliminarlo como carpeta
-	err = removeDirectory(partitionSuperblock, file, parentDirs, fileName)
+	err = removeDirectory(sb, file, parentDirs, fileName)
 	if err != nil {
 		return fmt.Errorf("error al eliminar archivo o carpeta '%s': %v", path, err)
 	}
@@ -124,8 +123,6 @@ func removeFile(sb *structs.Superblock, file *os.File, parentDirs []string, file
 		return fmt.Errorf("error al eliminar el archivo '%s': %v", fileName, err)
 	}
 
-	fmt.Println("Bloques")
-	sb.PrintBlocks(file.Name())
 	fmt.Printf("Archivo '%s' eliminado correctamente.\n", fileName)
 	return nil
 }
@@ -145,8 +142,6 @@ func removeDirectory(sb *structs.Superblock, file *os.File, parentDirs []string,
 		return fmt.Errorf("error al eliminar la carpeta '%s': %v", dirName, err)
 	}
 
-	fmt.Println("Bloques")
-	sb.PrintBlocks(file.Name())
 	fmt.Printf("Carpeta '%s' eliminada correctamente.\n", dirName)
 	return nil
 }
