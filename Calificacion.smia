@@ -95,3 +95,7 @@ find -path="/" -name="?.*"
 #******************** LOGOUT ********************
 # Si no tienen la vista de Logout descomentar esto
 #logout
+
+#Disco
+# /home/ubuntu/Calificacion_MIA/Discos/Disco1.mia
+# https://excalidraw.com/#room=88c47af4accc5099e858,hKUD6kGjjzVBuVDpuVnZ7w
