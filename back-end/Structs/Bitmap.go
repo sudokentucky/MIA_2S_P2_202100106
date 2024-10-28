@@ -177,12 +177,20 @@ func (sb *Superblock) isInodeFree(file *os.File, start int32, position int32) (b
 	return isFree, nil
 }
 
-// FreeBlock libera un bloque específico y lo marca como libre en el bitmap
+// FreeBlock libera un bloque específico, lo marca como libre en el bitmap y limpia su contenido
 func (sb *Superblock) FreeBlock(file *os.File, blockIndex int32) error {
 	fmt.Printf("Liberando el bloque en la posición %d.\n", blockIndex)
 
+	// Limpiar el contenido del bloque antes de liberarlo
+	blockOffset := int64(sb.S_block_start + blockIndex*sb.S_block_size)
+	zeroes := make([]byte, sb.S_block_size)
+	_, err := file.WriteAt(zeroes, blockOffset)
+	if err != nil {
+		return fmt.Errorf("error al limpiar el contenido del bloque %d: %w", blockIndex, err)
+	}
+
 	// Marcar el bloque como libre en el bitmap
-	err := sb.UpdateBitmapBlock(file, blockIndex, false)
+	err = sb.UpdateBitmapBlock(file, blockIndex, false)
 	if err != nil {
 		return fmt.Errorf("error al liberar el bloque %d: %w", blockIndex, err)
 	}
@@ -194,12 +202,31 @@ func (sb *Superblock) FreeBlock(file *os.File, blockIndex int32) error {
 	return nil
 }
 
-// FreeInode libera un inodo específico y lo marca como libre en el bitmap
+// FreeInode libera un inodo específico, lo marca como libre en el bitmap y limpia sus datos
 func (sb *Superblock) FreeInode(file *os.File, inodeIndex int32) error {
 	fmt.Printf("Liberando el inodo en la posición %d.\n", inodeIndex)
 
+	// Deserializar el inodo para limpiar sus datos
+	inode := &Inode{}
+	inodeOffset := int64(sb.S_inode_start + inodeIndex*sb.S_inode_size)
+	err := inode.Decode(file, inodeOffset)
+	if err != nil {
+		return fmt.Errorf("error al deserializar inodo %d para su limpieza: %w", inodeIndex, err)
+	}
+
+	// Limpiar los apuntadores a bloques y otros metadatos del inodo
+	inode.I_size = 0
+	inode.I_type[0] = '0' // Reiniciar el tipo del inodo
+	inode.I_block = [15]int32{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
+
+	// Sobrescribir el inodo limpio en su posición original
+	err = inode.Encode(file, inodeOffset)
+	if err != nil {
+		return fmt.Errorf("error al sobrescribir el inodo limpio %d: %w", inodeIndex, err)
+	}
+
 	// Marcar el inodo como libre en el bitmap
-	err := sb.UpdateBitmapInode(file, inodeIndex, false)
+	err = sb.UpdateBitmapInode(file, inodeIndex, false)
 	if err != nil {
 		return fmt.Errorf("error al liberar el inodo %d: %w", inodeIndex, err)
 	}
