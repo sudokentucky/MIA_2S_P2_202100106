@@ -118,12 +118,15 @@ func Analyzer(input string) (string, error) {
 		return "", errors.New("no se proporcionó ningún comando")
 	}
 
+	// Convertir el comando a minúsculas para hacerlo case insensitive
+	command := strings.ToLower(tokens[0])
+
 	// Verificar si el comando existe en el map
-	cmdFunc, exists := mapCommands[tokens[0]]
+	cmdFunc, exists := mapCommands[command]
 	if !exists {
-		if tokens[0] == "clear" {
+		if command == "clear" {
 			return clearTerminal()
-		} else if tokens[0] == "exit" {
+		} else if command == "exit" {
 			os.Exit(0)
 		}
 		return "", fmt.Errorf("comando desconocido: %s", tokens[0])
