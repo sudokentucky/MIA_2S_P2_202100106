@@ -120,3 +120,31 @@ func (fb *FolderBlock) RenameInFolderBlock(oldName string, newName string) error
 
 	return fmt.Errorf("el nombre '%s' no fue encontrado en los inodos 3 o 4", oldName)
 }
+
+// RemoveEntry elimina una entrada de archivo o carpeta del FolderBlock y actualiza el archivo
+func (fb *FolderBlock) RemoveEntry(file *os.File, name string, blockOffset int64) error {
+	// Iterar sobre los contenidos del bloque, comenzando desde el índice 2 para evitar modificar . y ..
+	for i := 2; i < len(fb.B_content); i++ {
+		content := &fb.B_content[i]
+		currentName := strings.Trim(string(content.B_name[:]), "\x00 ")
+
+		// Si encontramos la entrada que coincide con el nombre proporcionado
+		if strings.EqualFold(currentName, name) && content.B_inodo != -1 {
+			// Marcar la entrada como libre
+			content.B_inodo = -1
+			copy(content.B_name[:], strings.Repeat("\x00", len(content.B_name)))
+
+			// Serializar el bloque actualizado de vuelta al archivo
+			err := fb.Encode(file, blockOffset)
+			if err != nil {
+				return fmt.Errorf("error al serializar el FolderBlock después de eliminar la entrada '%s': %w", name, err)
+			}
+
+			fmt.Printf("Entrada '%s' eliminada correctamente del FolderBlock.\n", name)
+			return nil
+		}
+
+	}
+
+	return fmt.Errorf("la entrada '%s' no fue encontrada en el FolderBlock", name)
+}
