@@ -94,21 +94,14 @@ func commandEdit(editCmd *EDIT, outputBuffer *bytes.Buffer) error {
 		return fmt.Errorf("error al encontrar el archivo: %v", err)
 	}
 
-	// Buscar el archivo que contiene el nuevo contenido dentro del sistema de archivos recreado
-	contentParentDirs, contentFileName := utils.GetParentDirectories(editCmd.contenido)
-	contentInodeIndex, err := findFileInode(file, partitionSuperblock, contentParentDirs, contentFileName)
+	// Leer el contenido del archivo desde el sistema operativo real
+	newContent, err := os.ReadFile(editCmd.contenido)
 	if err != nil {
-		return fmt.Errorf("error al encontrar el archivo de contenido: %v", err)
+		return fmt.Errorf("error al leer el archivo de contenido '%s': %v", editCmd.contenido, err)
 	}
 
-	// Leer el contenido del archivo desde el sistema de archivos recreado
-	newContent, err := readFileFromInode(file, partitionSuperblock, contentInodeIndex)
-	if err != nil {
-		return fmt.Errorf("error al leer el contenido del archivo: %v", err)
-	}
-
-	// Editar el contenido del archivo en el sistema de archivos
-	err = editFileContent(file, partitionSuperblock, inodeIndex, []byte(newContent))
+	// Editar el contenido del archivo en el sistema de archivos simulado
+	err = editFileContent(file, partitionSuperblock, inodeIndex, newContent)
 	if err != nil {
 		return fmt.Errorf("error al editar el contenido del archivo: %v", err)
 	}
