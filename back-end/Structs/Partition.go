@@ -41,6 +41,7 @@ func (p *Partition) ModifySize(addSize int32, availableSpace int32) error {
 
 	// Modificar el tamaño de la partición
 	p.Part_size = newSize
+
 	fmt.Printf("El tamaño de la partición '%s' ha sido modificado. Nuevo tamaño: %d bytes.\n", string(p.Part_name[:]), p.Part_size)
 	return nil
 }

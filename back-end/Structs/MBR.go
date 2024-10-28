@@ -166,6 +166,32 @@ func (mbr *MBR) ApplyFit(partitionSize int32) (*Partition, error) {
 	}
 }
 
+// CalculateAvailableSpaceForPartition calcula el espacio disponible a partir del final de la partición actual
+func (mbr *MBR) CalculateAvailableSpaceForPartition(partition *Partition) (int32, error) {
+	startOfPartition := partition.Part_start
+	endOfPartition := startOfPartition + partition.Part_size
+
+	// Iterar sobre las particiones para encontrar la más cercana después de esta
+	var nextPartitionStart int32 = -1
+	for _, p := range mbr.MbrPartitions {
+		if p.Part_start > endOfPartition && (nextPartitionStart == -1 || p.Part_start < nextPartitionStart) {
+			nextPartitionStart = p.Part_start
+		}
+	}
+
+	// Si no hay una partición siguiente, considerar el final del disco
+	if nextPartitionStart == -1 {
+		nextPartitionStart = mbr.MbrSize
+	}
+
+	availableSpace := nextPartitionStart - endOfPartition
+	if availableSpace < 0 {
+		return 0, fmt.Errorf("el cálculo de espacio disponible resultó en un valor negativo")
+	}
+
+	return availableSpace, nil
+}
+
 // First Fit: Encuentra el primer espacio disponible que sea mayor o igual al tamaño de la partición
 func (mbr *MBR) ApplyFirstFit(partitionSize int32) (*Partition, error) {
 	fmt.Println("Iniciando First Fit...")

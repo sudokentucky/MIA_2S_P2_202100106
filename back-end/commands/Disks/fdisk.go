@@ -226,14 +226,23 @@ func processAddPartition(cmd *Fdisk, outputBuffer *bytes.Buffer) (string, error)
 		return "", fmt.Errorf("la partición '%s' no existe", cmd.name)
 	}
 
+	// Convertir cmd.add a bytes según la unidad especificada
+	addBytes, err := utils.ConvertToBytes(cmd.add, cmd.unit)
+	if err != nil {
+		return "", fmt.Errorf("error al convertir las unidades de -add: %v", err)
+	}
+
 	// Calcular espacio disponible si se está agregando espacio
 	var availableSpace int32 = 0
-	if cmd.add > 0 {
-		availableSpace, _ = mbr.CalculateAvailableSpace()
+	if addBytes > 0 {
+		availableSpace, err = mbr.CalculateAvailableSpaceForPartition(partition)
+		if err != nil {
+			return "", fmt.Errorf("error al calcular el espacio disponible para la partición '%s': %v", cmd.name, err)
+		}
 	}
 
 	// Modificar el tamaño de la partición
-	err = partition.ModifySize(int32(cmd.add), availableSpace)
+	err = partition.ModifySize(int32(addBytes), availableSpace)
 	if err != nil {
 		return "", fmt.Errorf("error al modificar el tamaño de la partición: %v", err)
 	}

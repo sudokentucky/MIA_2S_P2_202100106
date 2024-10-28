@@ -98,6 +98,10 @@ var mapCommands = map[string]func([]string) (string, error){ // Cambiamos a (str
 		result, err := commands.ParserRemove(args)
 		return fmt.Sprintf("%v", result), err
 	},
+	"lsblk": func(args []string) (string, error) {
+		result, err := Disks.ParserListPartitions(args)
+		return fmt.Sprintf("%v", result), err
+	},
 	"help": help,
 }
 
@@ -147,6 +151,14 @@ Comandos disponibles:
 - rep: Genera reportes. Ejemplo: rep -id=vd1 -path="/home/user/disco.mia" -name=mbr
 - clear: Limpia la terminal.
 - exit: Sale del programa.
+- lsblk: Lista las particiones de un disco. Ejemplo: lsblk -path="/home/user/disco.mia"
+- mkfile: Crea un archivo. Ejemplo: mkfile -path="/home/user/disco.mia" -p -size=10 -cont="Hola, mundo"
+- mkdir: Crea un directorio. Ejemplo: mkdir -path="/home/user/disco.mia" -p
+- cat: Muestra el contenido de un archivo. Ejemplo: cat -file="/home/user/disco.mia" -path="/home/user/disco.mia"
+- rename: Renombra un archivo o directorio. Ejemplo: rename -path="/home/user/disco.mia" -name="nuevo_nombre"
+- edit: Edita el contenido de un archivo. Ejemplo: edit -path="/home/user/disco.mia" -cont="Nuevo contenido"
+- find: Busca un archivo o directorio. Ejemplo: find -path="/home/user/disco.mia" -name="archivo"
+- remove: Elimina un archivo o directorio. Ejemplo: remove -path="/home/user/disco.mia" -name="archivo"
 - help: Muestra este mensaje de ayuda.
 
 `

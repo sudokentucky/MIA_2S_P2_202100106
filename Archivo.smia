@@ -1,0 +1,47 @@
+#ruta de los discos /home/ubuntu/Archivos/Disks/
+
+#Crear discos
+mkdisk -size=70 -unit=k -path=/home/sudokentucky/Calificacion_MIA/Discos/prueba1.mia
+
+#Crear particiones primarias
+fdisk -size=11 -unit=k -path=/home/sudokentucky/Calificacion_MIA/Discos/prueba1.mia -name="Particion1"
+fdisk -size=11 -unit=k -path=/home/sudokentucky/Calificacion_MIA/Discos/prueba1.mia -name="Particion2"
+fdisk -size=11 -unit=k -path=/home/sudokentucky/Calificacion_MIA/Discos/prueba1.mia -name="Particion3"
+
+#Crear particion extendida
+fdisk -size=11 -unit=k -path=/home/sudokentucky/Calificacion_MIA/Discos/prueba1.mia -type=E -name="Extendida"
+
+# Crear 3 particiones lógicas de 50 MB cada una dentro de la extendida
+fdisk -size=5 -unit=k -path=/home/sudokentucky/Calificacion_MIA/Discos/prueba1.mia  -type=L -name="Logica1"
+fdisk -size=5 -unit=k -path=/home/sudokentucky/Calificacion_MIA/Discos/prueba1.mia -type=L -name="Logica2"
+fdisk -size=5 -unit=k -path=/home/sudokentucky/Calificacion_MIA/Discos/prueba1.mia  -type=L -name="Logica3"
+
+#Agregar espacio a la particion 2
+fdisk -add=5 -unit=k -path=/home/sudokentucky/Calificacion_MIA/Discos/prueba1.mia -name="Particion2"
+
+rep -id=061A -path=/home/sudokentucky/Calificacion_MIA/Discos/ExampleDisk_Disk.png -name=disk
+
+#Ver particiones
+lsblk -path=/home/sudokentucky/Calificacion_MIA/Discos/prueba1.mia -name="Particion2"
+
+#Montar las particiones primarias
+mount -path=/home/sudokentucky/Calificacion_MIA/Discos/prueba1.mia -name="Particion1"
+mount -path=/home/sudokentucky/Calificacion_MIA/Discos/prueba1.mia -name="Particion2"
+mount -path=/home/sudokentucky/Calificacion_MIA/Discos/prueba1.mia -name="Particion3"
+
+
+#mkfs ext3
+mkfs -id=061A -type=full -fs=3fs
+
+#cat
+cat -file="/users.txt
+#mkdir
+mkdir -p -path="/home/usac/mia"
+mkdir -path="/home/usac/mia/docs/usrs"
+mkfile -size=128 -path="/home/usac/prueba.txt" 
+mkfile -size=27 -path="/usrs/usac/mia/1.txt"
+rename -path="/home/usac/mia/1.txt" -name="2.txt"
+mkfile -size=15 -path="/home/usac/mia/docs/3.txt"
+edit -path="/home/usac/mia/2.txt" -contenido="/home/usac/mia/docs/3.txt"
+find -path="/" -name="*"
+find -path="/" -name="?.*"
