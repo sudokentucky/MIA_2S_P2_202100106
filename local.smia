@@ -32,9 +32,9 @@ fdisk -add=500 -unit=k -path=/home/sudokentucky/Calificacion_MIA/Discos/Disco1.m
 #******************** MONTAR PARTICIONES ********************
 #DISCO 1
 #061A -> 06 sus ultimos dos digitos
-mount -path=/home/ubuntu/Calificacion_MIA/Discos/Disco1.mia -name=Part1
+mount -path=/home/sudokentucky/Calificacion_MIA/Discos/Disco1.mia -name=Part1
 #062A -> 06 sus ultimos dos digitos
-mount -path=/home/ubuntu/Calificacion_MIA/Discos/Disco1.mia -name=Part2
+mount -path=/home/sudokentucky/Calificacion_MIA/Discos/Disco1.mia -name=Part2
 
 #******************** DESMONTAR PARTICION ********************
 unmount -id=062A 
@@ -44,53 +44,53 @@ mkfs -type=full -id=061A -fs=3fs
 
 #******************** LOGIN ********************
 # Si no tienen la vista de Login descomentar esto
-#login -user=root -pass=123 -id=191a
+#login -user=root -pass=123 -id=061A
 
 #******************** CREACION DE CARPETAS ********************
 
 #RECURSIVO
 mkdir -p -path=/calificacion/U2024/9noSemestre
-mkdir 
-
+mkdir -path=/calificacion/U2024/6toSemestre
 mkdir -path=/calificacion/U2024/6toSemestre/MIA
-mkdir -path=/calificacion/U2024/6toSemestre/MIA/6toSemestre
-mkfile -path=/calificacion/U2024/6toSemestre/MIA/lab.txt -size=5
-mkfile -path=/calificacion/U2024/6toSemestre/MIA/magis.txt -size=5
+mkdir -path=/calificacion/U2024/6toSemestre/MIA/6to
+mkdir -path=/calificacion/U2024/6toSemestre/MIA/6to/labYmagis
+mkfile -path=/calificacion/U2024/6toSemestre/MIA/6to/labYmagis/lab.txt -size=5
+mkfile -path=/calificacion/U2024/6toSemestre/MIA/6to/labYmagis/magis.txt -size=5
 
 mkdir -path=/calificacion/U2024/9noSemestre/ARQUI
 mkfile -path=/calificacion/U2024/9noSemestre/ARQUI/lab.txt -size=10
 mkfile -path=/calificacion/U2024/9noSemestre/ARQUI/magis.txt -size=10
 
-mkdir -path=/calificacion/U2024/6toSemestre/MIA/6toSemestre/COMPI
-mkfile -path=/calificacion/U2024/6toSemestre/MIA/6toSemestre/COMPI/lab.txt -size=30
-mkfile -path=/calificacion/U2024/6toSemestre/MIA/6toSemestre/COMPI/magis.txt -size=30
+mkdir -path=/calificacion/U2024/6toSemestre/MIA/6to/COMPI
+mkfile -path=/calificacion/U2024/6toSemestre/MIA/6to/COMPI/lab.txt -size=30
+mkfile -path=/calificacion/U2024/6toSemestre/MIA/6to/COMPI/magis.txt -size=30
 
 mkdir -path=/calificacion/TEST
 mkdir -path=/calificacion/TEST/PRUEBA
 mkdir -path=/calificacion/TEST/PRUEBA/BORRAR
-mkfile -path=/calificacion/TEST/PRUEBA/carnet.txt -size=768
-mkfile -path=/calificacion/TEST/PRUEBA/borrar.txt -size=768
-
+mkdir -path=/calificacion/TEST/PRUEBA/CARNET
+mkfile -path=/calificacion/TEST/PRUEBA/CARNET/carnet.txt -size=768
+mkfile -path=/calificacion/TEST/PRUEBA/CARNET/borrar.txt -size=768
 mkdir -path=/calificacion/TEST/PRUEBA/BORRAR/BORRAME
-mkfile -path=/calificacion/TEST/cambiar_nombre.txt -size=768
+mkfile -path=/calificacion/TEST/cambia_n.txt -size=768
 
 #******************** REMOVE ********************
 # Borrando archivo
-remove -path=-path=/calificacion/TEST/PRUEBA/borrar.txt
+remove -path="/calificacion/TEST/PRUEBA/CARNET/borrar.txt"
 
 # Borrando carpeta
-mkdir -path=/calificacion/TEST/PRUEBA/BORRAR/BORRAME
+mkdir -path="/calificacion/TEST/PRUEBA/BORRAR/BORRAME"
 
 #******************** EDIT ********************
-edit -path="/calificacion/TEST/nombre.txt" -contenido="/home/sudokentucky/carnet.txt"
+edit -path="/calificacion/TEST/cambia_n.txt" -contenido="/home/sudokentucky/carnet.txt"
 
 #******************** RENAME ********************
-rename -path=/calificacion/TEST/cambiar_nombre.txt -name=cambiado.txt
-
+rename -path="/calificacion/TEST/cambia_n.txt" -name="cambiado.txt"
 
 #******************** FIND ********************
 # Archivos
-find -path = "/" -name = "?.*"
+find -path="/" -name="*"
+find -path="/" -name="?.*"
 
 #******************** LOGOUT ********************
 # Si no tienen la vista de Logout descomentar esto
