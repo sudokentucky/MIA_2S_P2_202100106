@@ -27,7 +27,6 @@ mount -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia
 mount -path=/home/sudokentucky/Escritorio/Archivos/Pruebas/Disks/ExampleDisk.mia  -name="Primaria1"
 
 mkfs -id=061A -type=full -fs=3fs
-mkfs -id=061A -type=full -fs=2fs
 
 login -user=root -pass=123 -id=061A
 mkdir -p -path="/home/usac/mia"
@@ -35,8 +34,12 @@ mkdir -p -path="/usrs/usac/mia/"
 remove -path="/home/usac/mia/"
 mkdir -path="/home"
 mkdir -path="/usrs"
+remove -path="/usrs"
 mkdir -path="/hola"
-mkfile -size=128 -path="/home/2.txt"
+mkfile -r -size=128 -path="/docs/2.txt"
+remove -path="/home"
+cat -file1="/home/2.txt"
+remove -path="/home/2.txt"
 mkfile -size=28 -path="/home/2.txt"
 cat -file1="/home/2.txt"
 mkdir -p -path="/user/path"
