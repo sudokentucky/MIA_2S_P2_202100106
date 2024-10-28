@@ -31,78 +31,67 @@ fdisk -add=500 -unit=k -path=/home/ubuntu/Calificacion_MIA/Discos/Disco1.mia -na
  
 #******************** MONTAR PARTICIONES ********************
 #DISCO 1
-#191a -> 19 sus ultimos dos digitos
+#061A -> 06 sus ultimos dos digitos
 mount -path=/home/ubuntu/Calificacion_MIA/Discos/Disco1.mia -name=Part1
-#192a -> 19 sus ultimos dos digitos
+#062A -> 06 sus ultimos dos digitos
 mount -path=/home/ubuntu/Calificacion_MIA/Discos/Disco1.mia -name=Part2
 
 #******************** DESMONTAR PARTICION ********************
-unmount -id=192a 
+unmount -id=062A 
 
 #******************** CREACION DE SISTEMA DE ARCHIVOS ********************
-mkfs -type=full -id=191a -fs=3fs
+mkfs -type=full -id=061A -fs=3fs
 
 #******************** LOGIN ********************
 # Si no tienen la vista de Login descomentar esto
-#login -user=root -pass=123 -id=191a
+#login -user=root -pass=123 -id=061A
 
 #******************** CREACION DE CARPETAS ********************
 
 #RECURSIVO
-mkdir -r -path=/calificacion/U2024/9noSemestre
-
+mkdir -p -path=/calificacion/U2024/9noSemestre
+mkdir -path=/calificacion/U2024/6toSemestre
 mkdir -path=/calificacion/U2024/6toSemestre/MIA
-mkfile -path=/calificacion/U2024/6toSemestre/MIA/lab.txt -size=5
-mkfile -path=/calificacion/U2024/6toSemestre/MIA/magis.txt -size=5
+mkdir -path=/calificacion/U2024/6toSemestre/MIA/6to
+mkdir -path=/calificacion/U2024/6toSemestre/MIA/6to/labYmagis
+mkfile -path=/calificacion/U2024/6toSemestre/MIA/6to/labYmagis/lab.txt -size=5
+mkfile -path=/calificacion/U2024/6toSemestre/MIA/6to/labYmagis/magis.txt -size=5
 
-mkdir -path=/calificacion/U2024/6toSemestre/ARQUI
-mkfile -path=/calificacion/U2024/6toSemestre/ARQUI/lab.txt -size=10
-mkfile -path=/calificacion/U2024/6toSemestre/ARQUI/magis.txt -size=10
+mkdir -path=/calificacion/U2024/9noSemestre/ARQUI
+mkfile -path=/calificacion/U2024/9noSemestre/ARQUI/lab.txt -size=10
+mkfile -path=/calificacion/U2024/9noSemestre/ARQUI/magis.txt -size=10
 
-mkdir -path=/calificacion/U2024/6toSemestre/COMPI
-mkfile -path=/calificacion/U2024/6toSemestre/COMPI/lab.txt -size=30
-mkfile -path=/calificacion/U2024/6toSemestre/COMPI/magis.txt -size=30
+mkdir -path=/calificacion/U2024/6toSemestre/MIA/6to/COMPI
+mkfile -path=/calificacion/U2024/6toSemestre/MIA/6to/COMPI/lab.txt -size=30
+mkfile -path=/calificacion/U2024/6toSemestre/MIA/6to/COMPI/magis.txt -size=30
 
 mkdir -path=/calificacion/TEST
-mkfile -path=/calificacion/TEST/carnet.txt -size=768
-mkfile -path=/calificacion/TEST/borrar.txt -size=768
-mkdir -path=/calificacion/TEST/BORRAME
-mkfile -path=/calificacion/TEST/cambiar_nombre.txt -size=768
-mkdir -path=/calificacion/COPY_TEST
-mkfile -path=/calificacion/COPY_TEST/moveme.txt -size=768
-
-mkdir -path=/calificacion/MOVE
+mkdir -path=/calificacion/TEST/PRUEBA
+mkdir -path=/calificacion/TEST/PRUEBA/BORRAR
+mkdir -path=/calificacion/TEST/PRUEBA/CARNET
+mkfile -path=/calificacion/TEST/PRUEBA/CARNET/carnet.txt -size=768
+mkfile -path=/calificacion/TEST/PRUEBA/CARNET/borrar.txt -size=768
+mkdir -path=/calificacion/TEST/PRUEBA/BORRAR/BORRAME
+mkfile -path=/calificacion/TEST/cambia_n.txt -size=768
 
 #******************** REMOVE ********************
 # Borrando archivo
-remove -path=/calificacion/TEST/borrar.txt
+remove -path="/calificacion/TEST/PRUEBA/CARNET/borrar.txt"
 
 # Borrando carpeta
-mkdir -path=/calificacion/TEST/BORRAME
+mkdir -path="/calificacion/TEST/PRUEBA/BORRAR/BORRAME"
 
 #******************** EDIT ********************
-edit -path=/calificacion/TEST/nombre.txt -contenido=”RUTA_CONTENIDO”
+edit -path="/calificacion/TEST/cambia_n.txt" -contenido="/home/ubuntu/carnet.txt"
 
 #******************** RENAME ********************
-rename -path=/calificacion/TEST/cambiar_nombre.txt -name=cambiado.txt
-
-#******************** COPY ********************
-copy -path=/calificacion/TEST -destino=/calificacion/COPY_TEST 
-
-#******************** MOVE ********************
-move -path=/calificacion/COPY_TEST/moveme.txt -destino=/calificacion/MOVE
+rename -path="/calificacion/TEST/cambia_n.txt" -name="cambiado.txt"
 
 #******************** FIND ********************
 # Archivos
-find -path = "/" -name = "?.*"
-
-#******************** CHOWN ********************
-# Error no existe usuario
-chown -path=/calificacion -usuario=user_no_existe
-
-#******************** CHMOD ********************
-chmod -path=/calificacion/TEST -ugo=777
+find -path="/" -name="*"
+find -path="/" -name="?.*"
 
 #******************** LOGOUT ********************
 # Si no tienen la vista de Logout descomentar esto
-logout
+#logout
