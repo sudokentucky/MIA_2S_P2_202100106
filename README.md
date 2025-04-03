@@ -249,5 +249,76 @@ La aplicación cuenta con un conjunto de comandos para gestionar el sistema de a
     # Sale del programa
     exit
     ```
+    ```mermaid
+    flowchart TD
+    subgraph "Frontend (Client Side)"
+        FE1["Entry Points: main.tsx & App.tsx"]:::frontendEntry
+        FE2["UI: Login Page"]:::frontendUI
+        FE3["UI: Command Execution"]:::frontendUI
+        FE4["UI: Disk/File Visualization"]:::frontendUI
+        FE5["UI: User Management"]:::frontendUI
+        FE6["State & Hooks (UserContext, useAuth, etc.)"]:::frontendState
+    end
+
+    subgraph "Backend (Server Side)"
+        BE1["Server Entry: main.go"]:::backendEntry
+        BE2["Command Handlers (Disks & Users)"]:::backendModules
+        BE3["Analyzer Module"]:::backendModules
+        BE4["Data Structures (Structs)"]:::backendModules
+        BE5["Report Generation (reps)"]:::backendModules
+        BE6["Globals & Utils"]:::backendModules
+        BE7["Containerization & Dependencies"]:::backendModules
+    end
+
+    %% Frontend to Backend Communication
+    FE3 -->|"HTTP_Request"| BE1
+    FE2 -->|"HTTP_Request"| BE1
+    FE4 -->|"HTTP_Request"| BE1
+    FE5 -->|"HTTP_Request"| BE1
+
+    %% Backend Processing Flow
+    BE1 -->|"Route_Command"| BE2
+    BE2 -->|"Invoke_Analyzer"| BE3
+    BE3 -->|"Data_Analysis"| BE4
+    BE3 -->|"Generate_Report"| BE5
+    BE2 -->|"Utilize"| BE6
+    BE1 -->|"Load_Dependencies"| BE7
+
+    %% Backend to Frontend Response
+    BE3 -->|"Response_Data"| FE3
+    BE5 -->|"Report_Output"| FE4
+
+    %% Click Events for Frontend Components
+    click FE1 "https://github.com/sudokentucky/mia_2s_p2_202100106/blob/main/front-end/src/main.tsx"
+    click FE1 "https://github.com/sudokentucky/mia_2s_p2_202100106/blob/main/front-end/src/App.tsx"
+    click FE2 "https://github.com/sudokentucky/mia_2s_p2_202100106/blob/main/front-end/src/Login.tsx"
+    click FE3 "https://github.com/sudokentucky/mia_2s_p2_202100106/blob/main/front-end/src/CommandExecution.tsx"
+    click FE4 "https://github.com/sudokentucky/mia_2s_p2_202100106/blob/main/front-end/src/DiskVisualizer.tsx"
+    click FE5 "https://github.com/sudokentucky/mia_2s_p2_202100106/blob/main/front-end/src/UserManagement.tsx"
+    click FE6 "https://github.com/sudokentucky/mia_2s_p2_202100106/blob/main/front-end/context/UserContext.tsx"
+    click FE6 "https://github.com/sudokentucky/mia_2s_p2_202100106/tree/main/front-end/hooks"
+
+    %% Click Events for Backend Components
+    click BE1 "https://github.com/sudokentucky/mia_2s_p2_202100106/blob/main/back-end/main.go"
+    click BE2 "https://github.com/sudokentucky/mia_2s_p2_202100106/tree/main/back-end/commands"
+    click BE2 "https://github.com/sudokentucky/mia_2s_p2_202100106/tree/main/back-end/commands/Users"
+    click BE3 "https://github.com/sudokentucky/mia_2s_p2_202100106/blob/main/back-end/Analyzer/Analyzer.go"
+    click BE4 "https://github.com/sudokentucky/mia_2s_p2_202100106/tree/main/back-end/Structs"
+    click BE5 "https://github.com/sudokentucky/mia_2s_p2_202100106/tree/main/back-end/reps"
+    click BE6 "https://github.com/sudokentucky/mia_2s_p2_202100106/tree/main/back-end/globals"
+    click BE6 "https://github.com/sudokentucky/mia_2s_p2_202100106/blob/main/back-end/utils/utils.go"
+    click BE7 "https://github.com/sudokentucky/mia_2s_p2_202100106/tree/main/back-end/dockerfile"
+    click BE7 "https://github.com/sudokentucky/mia_2s_p2_202100106/blob/main/back-end/go.mod"
+    click BE7 "https://github.com/sudokentucky/mia_2s_p2_202100106/blob/main/back-end/go.sum"
+    click BE7 "https://github.com/sudokentucky/mia_2s_p2_202100106/blob/main/front-end/package.json"
+    click BE7 "https://github.com/sudokentucky/mia_2s_p2_202100106/blob/main/front-end/package-lock.json"
+
+    %% Styling Definitions
+    classDef frontendEntry fill:#a1cfff,stroke:#333,stroke-width:2px;
+    classDef frontendUI fill:#a1cfff,stroke:#333,stroke-width:2px;
+    classDef frontendState fill:#a1cfff,stroke:#333,stroke-width:2px;
+    classDef backendEntry fill:#c3f7c3,stroke:#333,stroke-width:2px;
+    classDef backendModules fill:#c3f7c3,stroke:#333,stroke-width:2px;
+    ```
 
 ---
